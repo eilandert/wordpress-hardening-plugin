@@ -17,15 +17,21 @@ What this plugin does so far:
 - Block nasty files in uploads/* (PL1)
 - Block access to sensitive files like .db/.orig/.sql/.log/.git (PL1)
 - Block access to "/wp-json" (exact match, the api still works) (PL1)
+- Block inclusion attacks on index.php
+
+Blocking issues for release 1.0.0:
+- Format rules in the Owasp way.
+- Review rules by myself, once again.
+- Review rules by someone else.
+- More testing and input from users.
 
 Raincheck list:
 - wp-login.php, lock out ip after $x failures for $y time (configurable)
-- block inclusion attacks for index.php
 - whitelist server ip to access the blocked wp-cron/wp-json/xmlrpc paths
 
 ## Requirements
 - CRS Version 4.0 or newer
-- ModSecurity compatable Web Application Firewall
+- ModSecurity compatoble Web Application Firewall
 
 ## How to install the plugin
 
