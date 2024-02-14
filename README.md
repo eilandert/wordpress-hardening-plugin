@@ -7,9 +7,10 @@ The idea is to enhance the security of WordPress while minimizing the impact on 
 What this plugin does so far:
 - Block xmlrpc.php access (configurable, default: block) (PL1)
 - Block user enumeration (configurable, default: block) (PL1)
+- Block user "admin" logins (configurable, default: block) (PL1)
 - Block the wp-json restapi (configurable, default: non-block) (PL1)
 - Block directory listing in /wp-content/* and /wp-includes/* (PL1)
-- Block direct php access in /wp-content/* and /wp-includes/* (PL1>
+- Block direct php access in /wp-content/* and /wp-includes/* (PL1)
 - Block direct file access to some files in / and other files/directories (PL1)
 - Block other interpreters like .pl/.lua/.py/.sh (PL2)
 - Block nasty files in uploads/* (PL1)
@@ -20,7 +21,6 @@ Raincheck list:
 - wp-cron.php (configurable)
 - wp-login.php, lock out ip after $x failures for $y time (configurable)
 - block inclusion attacks for index.php
-- lock out accounts named "admin" (configurable)
 - whitelist server ip to access the blocked wp-cron/wp-json/xmlrpc paths
 
 ## Requirements
