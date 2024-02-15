@@ -1,4 +1,6 @@
 # Wordpress-hardening-plugin
+![Integration tests](https://github.com/eilandert/wordpress-hardening-plugin/actions/workflows/integration.yml/badge.svg) ![Integration tests](https://github.com/eilandert/wordpress-hardening-plugin/actions/workflows/lint.yml/badge.svg)
+
 This plugin contains extra rules to enhance the security of wordpress installations with the OWASP Core Rule Set.
 It's encouraged to install the wordpress-exclusions-rules-plugin as well, as we only add extra blocks in this plugin.
 
@@ -17,13 +19,7 @@ What this plugin does so far:
 - Block nasty files in uploads/* (PL1)
 - Block access to sensitive files like .db/.orig/.sql/.log/.git (PL1)
 - Block access to "/wp-json" (exact match, the api still works) (PL1)
-- Block inclusion attacks on index.php
-
-Blocking issues for release 1.0.0:
-- Format rules in the Owasp way.
-- Review rules by myself, once again.
-- Review rules by someone else.
-- More testing and input from users.
+- Block inclusion attacks on index.php (PL2)
 
 Raincheck list:
 - wp-login.php, lock out ip after $x failures for $y time (configurable)
@@ -47,5 +43,3 @@ If you find a false positive that this plugin does not cover then please open a 
 2. ModSecurity/Coraza Version
 3. modsec audit logs
 4. what caused the false positive
-
-
