@@ -1,0 +1,24 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522107.yaml
+tests:
+  - test_title: 9522107
+    desc: Test if restapi works
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /wp-json/wp-statistics/v2/hit?wp_statistics_hit_rest=yes&track_all=1&current_page_type=home&current_page_id=445&search_query&page_uri=Lw=&referred=&_=1707944400020
+            data: |
+              text
+          output:
+            no_log_contains: id "9522107"

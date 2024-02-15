@@ -1,0 +1,58 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522102.yaml
+tests:
+  - test_title: 9522205-1
+    desc: Test nasty shit in /wp-content/uploads
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /wp-content/uploads/2024/15/2/test.lua
+            data: |
+              text
+          output:
+            log_contains: id "9522205"
+  - test_title: 9522205-2
+    desc: Test nasty shit in /wp-content/uploads
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /wp-content/uploads/test/test/test/test/test/test/test/test/test/test/test/test.js
+            data: |
+              text
+          output:
+            log_contains: id "9522205"
+  - test_title: 9522205-3
+    desc: Test nasty shit in /wp-content/uploads
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /wp-content/uploads/2024/15/2/test.webp
+            data: |
+              text
+          output:
+            no_log_contains: id "9522205"

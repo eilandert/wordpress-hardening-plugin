@@ -1,0 +1,109 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522104.yaml
+tests:
+  - test_title: 9522104-1
+    desc: Test if user enumeration is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /author=1
+            data: |
+              text
+          output:
+            log_contains: id "9522104"
+  - test_title: 9522104-2
+    desc: Test if user enumeration is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /AUTHOR=99999999999999999999999
+            data: |
+              text
+          output:
+            log_contains: id "9522104"
+  - test_title: 9522104-3
+    desc: Test if user enumeration is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /wp-json/wp/v2/users
+            data: |
+              text
+          output:
+            log_contains: id "9522104"
+  - test_title: 9522104-4
+    desc: Test if user enumeration is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /wp-json/wp/v2/USERS=99999999999999999999999
+            data: |
+              text
+          output:
+            log_contains: id "9522104"
+  - test_title: 9522104-5
+    desc: Test if user enumeration is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /wp-json/wp/v2/users?search=test
+            data: |
+              text
+          output:
+            log_contains: id "9522104"
+  - test_title: 9522104-6
+    desc: Test if user enumeration is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /section/news?rest_route=/wp/v2/users
+            data: |
+              text
+          output:
+            log_contains: id "9522104"
