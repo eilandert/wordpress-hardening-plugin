@@ -3,10 +3,10 @@ meta:
   author: Thijs Eilander
   description: wordpress-hardening-plugin
   enabled: true
-  name: 9522104.yaml
+  name: 9522200.yaml
 tests:
-  - test_title: 9522104-1
-    desc: Test if user enumeration is blocked (default)
+  - test_title: 9522200-1
+    desc: Test if php in the plugins directory is blocked
     stages:
       - stage:
           input:
@@ -17,13 +17,13 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /author=1
+            uri: /wp-content/plugins/modsecurity/modsecurity.php
             data: |
               text
           output:
-            log_contains: id "9522104"
-  - test_title: 9522104-2
-    desc: Test if user enumeration is blocked, with caps
+            log_contains: id "9522200"
+  - test_title: 9522200-2
+    desc: Test if /wp-includes/*.php is blocked
     stages:
       - stage:
           input:
@@ -34,13 +34,13 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /AUTHOR=99999999999999999999999
+            uri: /wp-includes/wp-db.php
             data: |
               text
           output:
-            log_contains: id "9522104"
-  - test_title: 9522104-3
-    desc: Test if user enumeration is blocked
+            log_contains: id "9522200"
+  - test_title: 9522200-3
+    desc: Test if /index.php is working
     stages:
       - stage:
           input:
@@ -51,13 +51,13 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /wp-json/wp/v2/users
+            uri: /index.php
             data: |
               text
           output:
-            log_contains: id "9522104"
-  - test_title: 9522104-4
-    desc: Test if user enumeration is blocked
+            no_log_contains: id "9522200"
+  - test_title: 9522200-4
+    desc: Test if /wp-admin/admin-ajax.php is working
     stages:
       - stage:
           input:
@@ -68,13 +68,13 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /wp-json/wp/v2/USERS=99999999999999999999999
+            uri: /wp-admin/admin-ajax.php
             data: |
               text
           output:
-            log_contains: id "9522104"
-  - test_title: 9522104-5
-    desc: Test if user enumeration is blocked
+            no_log_contains: id "9522200"
+  - test_title: 9522200-5
+    desc: Test if wp-cron is working
     stages:
       - stage:
           input:
@@ -85,13 +85,13 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /wp-json/wp/v2/users?search=test
+            uri: /wp-cron.php
             data: |
               text
           output:
-            log_contains: id "9522104"
-  - test_title: 9522104-6
-    desc: Test if user enumeration is blocked through alternative route
+            no_log_contains: id "9522200"
+  - test_title: 9522200-6
+    desc: Test if xmlrpc is working
     stages:
       - stage:
           input:
@@ -102,8 +102,25 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /section/news?rest_route=/wp/v2/users
+            uri: /xmlrpc.php
             data: |
               text
           output:
-            log_contains: id "9522104"
+            no_log_contains: id "9522200"
+  - test_title: 9522200-7
+    desc: Test if wp-login.php is working
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /wp-login.php
+            data: |
+              text
+          output:
+            no_log_contains: id "9522200"

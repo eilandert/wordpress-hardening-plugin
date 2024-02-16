@@ -6,7 +6,7 @@ meta:
   name: 9522102.yaml
 tests:
   - test_title: 9522102
-    desc: Test if xmlrpc.php is blocked
+    desc: Test if xmlrpc.php is not blocked (default)
     stages:
       - stage:
           input:

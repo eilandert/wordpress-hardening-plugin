@@ -6,7 +6,7 @@ meta:
   name: 9522111.yaml
 tests:
   - test_title: 95222111
-    desc: Test if wp-cron.php works
+    desc: Test if wp-cron.php is not blocked (default)
     stages:
       - stage:
           input:
