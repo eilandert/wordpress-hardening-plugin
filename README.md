@@ -22,6 +22,7 @@ What this plugin does so far:
 
 Raincheck list:
 - wp-login.php, lock out ip after $x failures for $y time (configurable)
+= wp-login.php, add geoip option
 - whitelist server ip to access the blocked wp-cron/wp-json/xmlrpc paths
 
 ## Requirements
