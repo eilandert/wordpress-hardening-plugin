@@ -1,4 +1,4 @@
-# Wordpress-hardening-plugin
+# Wordpress-hardening-plugin / modsecurity (CRS4.0+)
 ![Integration tests](https://github.com/eilandert/wordpress-hardening-plugin/actions/workflows/integration.yml/badge.svg) ![Integration tests](https://github.com/eilandert/wordpress-hardening-plugin/actions/workflows/lint.yml/badge.svg)
 
 This plugin contains extra rules to enhance the security of wordpress installations with the OWASP Core Rule Set.
@@ -26,7 +26,7 @@ Raincheck list:
 
 ## Requirements
 - CRS Version 4.0 or newer
-- ModSecurity compatoble Web Application Firewall
+- ModSecurity compatible Web Application Firewall
 
 ## How to install the plugin
 
