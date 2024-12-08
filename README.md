@@ -1,10 +1,10 @@
-# Wordpress-hardening-plugin
+# Wordpress-hardening-plugin / modsecurity (CRS4.0+)
 ![Integration tests](https://github.com/eilandert/wordpress-hardening-plugin/actions/workflows/integration.yml/badge.svg) ![Integration tests](https://github.com/eilandert/wordpress-hardening-plugin/actions/workflows/lint.yml/badge.svg)
 
 This plugin contains extra rules to enhance the security of wordpress installations with the OWASP Core Rule Set.
 It's encouraged to install the wordpress-exclusions-rules-plugin as well, as we only add extra blocks in this plugin.
 
-The idea is to enhance the security of WordPress while minimizing the impact on PHP/SQL performance and eliminating the need for additional security plugins without interfering with wordpress or owasp.
+The idea is to enhance the security of WordPress while minimizing the impact on PHP/SQL performance and eliminating the need for additional wordpress security plugins without interfering with wordpress or owasp.
 
 What this plugin does so far:
 - Block xmlrpc.php access (configurable, default: block) (PL1)
@@ -19,15 +19,15 @@ What this plugin does so far:
 - Block nasty files in uploads/* (PL1)
 - Block access to sensitive files like .db/.orig/.sql/.log/.git (PL1)
 - Block access to "/wp-json" (exact match, the api still works) (PL1)
-- Block inclusion attacks on index.php (PL2)
 
 Raincheck list:
 - wp-login.php, lock out ip after $x failures for $y time (configurable)
+= wp-login.php, add geoip option
 - whitelist server ip to access the blocked wp-cron/wp-json/xmlrpc paths
 
 ## Requirements
 - CRS Version 4.0 or newer
-- ModSecurity compatoble Web Application Firewall
+- ModSecurity compatible Web Application Firewall
 
 ## How to install the plugin
 
