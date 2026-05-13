@@ -22,3 +22,8 @@
 /wp-content/index.php
 /wp-admin/install
 /wp-admin/includes
+# WP-CLI and tool configuration files
+/.wp-cli.yml
+/.wp-cli/
+/wp-cli.yml
+/wp-cli.local.yml

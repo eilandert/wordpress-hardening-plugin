@@ -1,0 +1,167 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin rate limiting tests
+  enabled: true
+  name: 9522410.yaml
+tests:
+  - test_title: 9522410-1
+    desc: Test that login attempt from non-whitelisted IP (8.8.8.8) is tracked (counter increment rule 9522411)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+              Content-Type: application/x-www-form-urlencoded
+              X-Forwarded-For: 8.8.8.8
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=wrong
+          output:
+            log_contains: id "9522411"
+
+  - test_title: 9522410-2
+    desc: Test that login attempt from localhost (127.0.0.1) is NOT tracked (whitelist rule 9522410)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+              Content-Type: application/x-www-form-urlencoded
+              X-Forwarded-For: 127.0.0.1
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=wrong
+          output:
+            log_not_contains: id "9522411"
+
+  - test_title: 9522410-3
+    desc: Test that login attempt from RFC 1918 IP (192.168.1.100) is NOT tracked (whitelist rule 9522410)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+              Content-Type: application/x-www-form-urlencoded
+              X-Forwarded-For: 192.168.1.100
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=wrong
+          output:
+            log_not_contains: id "9522411"
+
+  - test_title: 9522410-4
+    desc: Test that login attempt from RFC 1918 IP (10.0.0.50) is NOT tracked (whitelist rule 9522410)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+              Content-Type: application/x-www-form-urlencoded
+              X-Forwarded-For: 10.0.0.50
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=wrong
+          output:
+            log_not_contains: id "9522411"
+
+  - test_title: 9522410-5
+    desc: Test that login attempt from RFC 1918 IP (172.16.0.1) is NOT tracked (whitelist rule 9522410)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+              Content-Type: application/x-www-form-urlencoded
+              X-Forwarded-For: 172.16.0.1
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=wrong
+          output:
+            log_not_contains: id "9522411"
+
+  - test_title: 9522410-6
+    desc: Test that rate limiting gate check works (rule 9522400 gates all rate limiting)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+              Content-Type: application/x-www-form-urlencoded
+              X-Forwarded-For: 203.0.113.50
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=user&pwd=pass
+          output:
+            # Should log tracking (gate allows it to continue)
+            log_contains: id "9522411"
+
+  - test_title: 9522410-7
+    desc: Test that non-login POST requests are NOT tracked by rate limiting
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+              Content-Type: application/x-www-form-urlencoded
+              X-Forwarded-For: 8.8.8.8
+            port: 80
+            method: POST
+            uri: /wp-admin/admin-ajax.php
+            data: action=something
+          output:
+            log_not_contains: id "9522411"
+
+  - test_title: 9522410-8
+    desc: Test that GET requests to wp-login.php are NOT tracked (only POST)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+              X-Forwarded-For: 8.8.8.8
+            port: 80
+            method: GET
+            uri: /wp-login.php
+          output:
+            log_not_contains: id "9522411"
+
+  - test_title: 9522410-9
+    desc: Test that login attempt URI must END with /wp-login.php (not substring match)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+              Content-Type: application/x-www-form-urlencoded
+              X-Forwarded-For: 8.8.8.8
+            port: 80
+            method: POST
+            uri: /foo/wp-login.php.bak
+            data: log=admin&pwd=wrong
+          output:
+            log_not_contains: id "9522411"

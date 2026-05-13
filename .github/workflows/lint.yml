@@ -2,5 +2,60 @@
 on: [push, pull_request]        # yamllint disable-line rule:truthy
 
 jobs:
+  validate-files:
+    name: Validate Plugin Files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check @pmFromFile references
+        run: |
+          # Validate that all @pmFromFile references point to existing .data files
+          grep -r "@pmFromFile" plugins/*.conf | while read line; do
+            file=$(echo $line | sed -n 's/.*@pmFromFile \([^ ]*\).*/\1/p')
+            if [ -n "$file" ]; then
+              if [ ! -f "plugins/$file" ]; then
+                echo "ERROR: Referenced file not found: $file"
+                exit 1
+              fi
+            fi
+          done
+          echo "✓ All @pmFromFile references valid"
+
+      - name: Check Rule ID ranges
+        run: |
+          # Validate that all rules are in the allocated range 9522000-9522999
+          grep -o 'id:[0-9]*' plugins/*.conf | cut -d: -f2 | while read id; do
+            if [ $id -lt 9522000 ] || [ $id -gt 9522999 ]; then
+              echo "ERROR: Rule ID $id outside allocated range (9522000-9522999)"
+              exit 1
+            fi
+          done
+          echo "✓ All Rule IDs in valid range"
+
+      - name: Check for duplicate Rule IDs
+        run: |
+          # Ensure no duplicate rule IDs
+          dupes=$(grep -oh 'id:[0-9]*' plugins/*.conf | cut -d: -f2 | sort | uniq -d)
+          if [ -n "$dupes" ]; then
+            echo "ERROR: Duplicate Rule IDs found: $dupes"
+            exit 1
+          fi
+          echo "✓ No duplicate Rule IDs"
+
+      - name: Validate test file references
+        run: |
+          # Check that test files reference valid rule IDs
+          for testfile in tests/regression/wordpress-hardening-plugin/*.yaml; do
+            ruleid=$(basename $testfile .yaml)
+            # Verify this rule ID exists in config files
+            if ! grep -q "id:$ruleid" plugins/*.conf; then
+              echo "ERROR: Test file $testfile references non-existent rule ID $ruleid"
+              exit 1
+            fi
+          done
+          echo "✓ All test files reference valid rule IDs"
+
   plugin-lint:
+    needs: validate-files
     uses: coreruleset/crs-plugin-test-action/.github/workflows/lint.yaml@main

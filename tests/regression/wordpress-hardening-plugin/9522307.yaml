@@ -3,10 +3,10 @@ meta:
   author: Thijs Eilander
   description: wordpress-hardening-plugin
   enabled: true
-  name: 9522207.yaml
+  name: 9522307.yaml
 tests:
-  - test_title: 9522207-1
-    desc: Test if ^/wp-json$ blocks
+  - test_title: 9522307-1
+    desc: Test if directory traversal in uploads is blocked
     stages:
       - stage:
           input:
@@ -17,13 +17,13 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /wp-json
+            uri: /wp-content/uploads/../wp-config.php
             data: |
               text
           output:
-            log_contains: id "9522207"
-  - test_title: 9522207-2
-    desc: Test if ^/wp-json/$ blocks
+            log_contains: id "9522307"
+  - test_title: 9522307-2
+    desc: Test if double-dot traversal with encoded slash is blocked
     stages:
       - stage:
           input:
@@ -34,13 +34,13 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /wp-json/
+            uri: /wp-content/uploads/2024/../../wp-config.php
             data: |
               text
           output:
-            log_contains: id "9522207"
-  - test_title: 9522207-3
-    desc: Test that rule 9522207 respects gate (block_rest_api must be ON)
+            log_contains: id "9522307"
+  - test_title: 9522307-3
+    desc: Test if traversal into wp-includes is blocked
     stages:
       - stage:
           input:
@@ -51,10 +51,8 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /wp-json
+            uri: /wp-content/uploads/../../../wp-includes/functions.php
             data: |
               text
-            rule:
-              engine: "!@contains TX:wphard.block_rest_api 1"
           output:
-            log_not_contains: id "9522207"
+            log_contains: id "9522307"

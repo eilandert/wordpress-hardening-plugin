@@ -3,10 +3,10 @@ meta:
   author: Thijs Eilander
   description: wordpress-hardening-plugin
   enabled: true
-  name: 9522207.yaml
+  name: 9522313.yaml
 tests:
-  - test_title: 9522207-1
-    desc: Test if ^/wp-json$ blocks
+  - test_title: 9522313-1
+    desc: Test if XDEBUG_SESSION_START probe is blocked
     stages:
       - stage:
           input:
@@ -17,13 +17,13 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /wp-json
+            uri: /wp-login.php?XDEBUG_SESSION_START=phpstorm
             data: |
               text
           output:
-            log_contains: id "9522207"
-  - test_title: 9522207-2
-    desc: Test if ^/wp-json/$ blocks
+            log_contains: id "9522313"
+  - test_title: 9522313-2
+    desc: Test if XDEBUG_SESSION in cookie/param is blocked
     stages:
       - stage:
           input:
@@ -34,13 +34,13 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /wp-json/
+            uri: /?XDEBUG_SESSION=1
             data: |
               text
           output:
-            log_contains: id "9522207"
-  - test_title: 9522207-3
-    desc: Test that rule 9522207 respects gate (block_rest_api must be ON)
+            log_contains: id "9522313"
+  - test_title: 9522313-3
+    desc: Test if XDEBUG_PROFILE probe is blocked
     stages:
       - stage:
           input:
@@ -51,10 +51,25 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /wp-json
+            uri: /wp-admin/admin.php?XDEBUG_PROFILE=1
             data: |
               text
-            rule:
-              engine: "!@contains TX:wphard.block_rest_api 1"
           output:
-            log_not_contains: id "9522207"
+            log_contains: id "9522313"
+  - test_title: 9522313-4
+    desc: Test if phpinfo probe is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /?phpinfo=1
+            data: |
+              text
+          output:
+            log_contains: id "9522313"

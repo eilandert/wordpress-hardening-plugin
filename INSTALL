@@ -1,1 +1,17 @@
-See [README](README.md).
+Installation
+
+For official CRS plugin installation instructions, see https://coreruleset.org/docs/concepts/plugins/#how-to-install-a-plugin.
+
+File Path Configuration
+=====================
+
+This plugin uses @pmFromFile for efficient pattern matching. The `wordpress-hardening-files.data` file must be:
+
+1. Placed in the same directory as `wordpress-hardening-before.conf`, OR
+2. Placed in ModSecurity's configured rules directory, OR
+3. Referenced with an absolute path in the rules file
+
+If loading rules from a different path, ensure the .data file is accessible or update the @pmFromFile reference:
+  @pmFromFile /full/path/to/wordpress-hardening-files.data
+
+See [README](README.md) for complete installation documentation.

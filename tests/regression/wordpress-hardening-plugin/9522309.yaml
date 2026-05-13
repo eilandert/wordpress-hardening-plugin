@@ -3,10 +3,10 @@ meta:
   author: Thijs Eilander
   description: wordpress-hardening-plugin
   enabled: true
-  name: 9522207.yaml
+  name: 9522309.yaml
 tests:
-  - test_title: 9522207-1
-    desc: Test if ^/wp-json$ blocks
+  - test_title: 9522309-1
+    desc: Test if URL-encoded null byte in URI is blocked
     stages:
       - stage:
           input:
@@ -17,13 +17,13 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /wp-json
+            uri: /wp-content/uploads/image%00.php
             data: |
               text
           output:
-            log_contains: id "9522207"
-  - test_title: 9522207-2
-    desc: Test if ^/wp-json/$ blocks
+            log_contains: id "9522309"
+  - test_title: 9522309-2
+    desc: Test if null byte in query string is blocked
     stages:
       - stage:
           input:
@@ -34,13 +34,13 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /wp-json/
+            uri: /wp-login.php?redirect_to=%00evil.com
             data: |
               text
           output:
-            log_contains: id "9522207"
-  - test_title: 9522207-3
-    desc: Test that rule 9522207 respects gate (block_rest_api must be ON)
+            log_contains: id "9522309"
+  - test_title: 9522309-3
+    desc: Test if null byte in POST param is blocked
     stages:
       - stage:
           input:
@@ -49,12 +49,11 @@ tests:
               Host: localhost
               User-Agent: OWASP CRS
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              Content-Type: application/x-www-form-urlencoded
             port: 80
-            method: GET
-            uri: /wp-json
+            method: POST
+            uri: /wp-login.php
             data: |
-              text
-            rule:
-              engine: "!@contains TX:wphard.block_rest_api 1"
+              log=admin%00evil&pwd=password
           output:
-            log_not_contains: id "9522207"
+            log_contains: id "9522309"

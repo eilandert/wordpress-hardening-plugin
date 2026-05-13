@@ -107,3 +107,37 @@ tests:
               text
           output:
             log_contains: id "9522104"
+  - test_title: 9522104-7
+    desc: Test if URL-encoded user enumeration is blocked (author%3D)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /author%3D5
+            data: |
+              text
+          output:
+            log_contains: id "9522104"
+  - test_title: 9522104-8
+    desc: Test if mixed-case URL-encoded user enumeration is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /AUTHOR%3D99
+            data: |
+              text
+          output:
+            log_contains: id "9522104"

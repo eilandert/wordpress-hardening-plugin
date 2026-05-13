@@ -1,0 +1,97 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522150.yaml
+tests:
+  - test_title: 9522150-1
+    desc: Test that xmlrpc.php is blocked from non-whitelisted IP (8.8.8.8)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              X-Forwarded-For: 8.8.8.8
+            port: 80
+            method: GET
+            uri: /xmlrpc.php
+            data: |
+              text
+          output:
+            log_contains: id "9522102"
+  - test_title: 9522150-2
+    desc: Test that xmlrpc.php is allowed from localhost (127.0.0.1)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              X-Forwarded-For: 127.0.0.1
+            port: 80
+            method: GET
+            uri: /xmlrpc.php
+            data: |
+              text
+          output:
+            log_not_contains: id "9522102"
+  - test_title: 9522150-3
+    desc: Test that xmlrpc.php is allowed from RFC 1918 IP (192.168.1.100)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              X-Forwarded-For: 192.168.1.100
+            port: 80
+            method: GET
+            uri: /xmlrpc.php
+            data: |
+              text
+          output:
+            log_not_contains: id "9522102"
+  - test_title: 9522150-4
+    desc: Test that xmlrpc.php is allowed from RFC 1918 IP (10.0.0.50)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              X-Forwarded-For: 10.0.0.50
+            port: 80
+            method: GET
+            uri: /xmlrpc.php
+            data: |
+              text
+          output:
+            log_not_contains: id "9522102"
+  - test_title: 9522150-5
+    desc: Test that xmlrpc.php is allowed from RFC 1918 IP (172.16.0.1)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              X-Forwarded-For: 172.16.0.1
+            port: 80
+            method: GET
+            uri: /xmlrpc.php
+            data: |
+              text
+          output:
+            log_not_contains: id "9522102"

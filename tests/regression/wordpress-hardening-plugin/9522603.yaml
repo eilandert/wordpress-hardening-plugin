@@ -1,0 +1,81 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522603.yaml
+tests:
+  - test_title: 9522603-1
+    desc: >
+      Request with X-Forwarded-For set to a blocklisted IP (192.0.2.1, RFC 5737
+      TEST-NET-1 — listed in wordpress-hardening-ip-reputation.data for CI tests)
+      must be detected. Rule 9522603 must fire.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              X-Forwarded-For: 192.0.2.1
+            port: 80
+            method: GET
+            uri: /wp-admin/
+          output:
+            log_contains: id "9522603"
+
+  - test_title: 9522603-2
+    desc: >
+      Request with X-Forwarded-For set to a non-blocklisted IP must NOT be detected.
+      1.2.3.4 is not in the data file. Rule 9522603 must NOT fire.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              X-Forwarded-For: 1.2.3.4
+            port: 80
+            method: GET
+            uri: /wp-admin/
+          output:
+            no_log_contains: id "9522603"
+
+  - test_title: 9522603-3
+    desc: >
+      Request with X-Forwarded-For set to an RFC 1918 address (192.168.1.1) must
+      NOT be blocked — private addresses are whitelisted by rule 9522601.
+      Rule 9522603 must NOT fire even if the data file contains the public prefix.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              X-Forwarded-For: 192.168.1.1
+            port: 80
+            method: GET
+            uri: /wp-admin/
+          output:
+            no_log_contains: id "9522603"
+
+  - test_title: 9522603-4
+    desc: >
+      IP reputation check applies globally — any URI, not just /wp-login.php.
+      A request to the homepage from a blocklisted IP must also be detected.
+      Rule 9522603 must fire.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              X-Forwarded-For: 192.0.2.99
+            port: 80
+            method: GET
+            uri: /
+          output:
+            log_contains: id "9522603"

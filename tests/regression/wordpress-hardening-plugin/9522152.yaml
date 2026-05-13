@@ -1,0 +1,79 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522152.yaml
+tests:
+  - test_title: 9522152-1
+    desc: Test that wp-cron.php is blocked from non-whitelisted IP (1.2.3.4)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              X-Forwarded-For: 1.2.3.4
+            port: 80
+            method: GET
+            uri: /wp-cron.php
+            data: |
+              text
+          output:
+            log_contains: id "9522111"
+  - test_title: 9522152-2
+    desc: Test that wp-cron.php is allowed from localhost (127.0.0.1)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              X-Forwarded-For: 127.0.0.1
+            port: 80
+            method: GET
+            uri: /wp-cron.php
+            data: |
+              text
+          output:
+            log_not_contains: id "9522111"
+  - test_title: 9522152-3
+    desc: Test that wp-cron.php is allowed from RFC 1918 IP (192.168.10.200)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              X-Forwarded-For: 192.168.10.200
+            port: 80
+            method: GET
+            uri: /wp-cron.php
+            data: |
+              text
+          output:
+            log_not_contains: id "9522111"
+  - test_title: 9522152-4
+    desc: Test that wp-cron.php is allowed from RFC 1918 IP (172.31.255.255)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              X-Forwarded-For: 172.31.255.255
+            port: 80
+            method: GET
+            uri: /wp-cron.php
+            data: |
+              text
+          output:
+            log_not_contains: id "9522111"

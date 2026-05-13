@@ -1,0 +1,79 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522317.yaml
+tests:
+  - test_title: 9522317-1
+    desc: Test if wp-admin/install.php is blocked (block_dangerous_admin must be ON)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              TX.wphard.block_dangerous_admin: "1"
+            port: 80
+            method: GET
+            uri: /wp-admin/install.php
+            data: |
+              text
+          output:
+            log_contains: id "9522317"
+  - test_title: 9522317-2
+    desc: Test if wp-admin/setup-config.php is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              TX.wphard.block_dangerous_admin: "1"
+            port: 80
+            method: GET
+            uri: /wp-admin/setup-config.php
+            data: |
+              text
+          output:
+            log_contains: id "9522317"
+  - test_title: 9522317-3
+    desc: Test if wp-admin/upgrade.php is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              TX.wphard.block_dangerous_admin: "1"
+            port: 80
+            method: GET
+            uri: /wp-admin/upgrade.php
+            data: |
+              text
+          output:
+            log_contains: id "9522317"
+  - test_title: 9522317-4
+    desc: Test if wp-admin/wp-activate.php is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              TX.wphard.block_dangerous_admin: "1"
+            port: 80
+            method: GET
+            uri: /wp-admin/wp-activate.php
+            data: |
+              text
+          output:
+            log_contains: id "9522317"

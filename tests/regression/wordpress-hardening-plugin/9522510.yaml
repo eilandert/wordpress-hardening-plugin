@@ -1,0 +1,110 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522510.yaml
+tests:
+  - test_title: 9522510-1
+    desc: >
+      Test that wp-login.php POST from a non-whitelisted country (CF-IPCountry: CN)
+      is detected when GeoIP feature is enabled and allowed list is empty.
+      Rule 9522510 must fire.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Content-Type: application/x-www-form-urlencoded
+              CF-IPCountry: CN
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=password&wp-submit=Log+In
+          output:
+            log_contains: id "9522510"
+
+  - test_title: 9522510-2
+    desc: >
+      Test that wp-login.php POST without a country header is allowed (fail-open).
+      Rule 9522504 (no country detected gate) must skip the block.
+      Rule 9522510 must NOT fire.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Content-Type: application/x-www-form-urlencoded
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=password&wp-submit=Log+In
+          output:
+            no_log_contains: id "9522510"
+
+  - test_title: 9522510-3
+    desc: >
+      Test that non-login.php URIs are not blocked by GeoIP rules regardless
+      of country header (rule 9522505 gates on /wp-login.php only).
+      Rule 9522510 must NOT fire for a GET to /index.php.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              CF-IPCountry: RU
+            port: 80
+            method: GET
+            uri: /index.php
+          output:
+            no_log_contains: id "9522510"
+
+  - test_title: 9522510-4
+    desc: >
+      Test that X-GeoIP-Country header (generic proxy/nginx geoip2 fallback) is
+      also honoured when CF-IPCountry is absent.
+      Rule 9522510 must fire for a blocked country via X-GeoIP-Country.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Content-Type: application/x-www-form-urlencoded
+              X-GeoIP-Country: RU
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=password&wp-submit=Log+In
+          output:
+            log_contains: id "9522510"
+
+  - test_title: 9522510-5
+    desc: >
+      Test that requests from RFC 1918 addresses are whitelisted and bypass the
+      GeoIP block even when a non-allowed country header is present.
+      Rule 9522506 (IP whitelist via X-Forwarded-For) must skip the block.
+      Rule 9522510 must NOT fire.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Content-Type: application/x-www-form-urlencoded
+              CF-IPCountry: CN
+              X-Forwarded-For: 192.168.1.1
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=password&wp-submit=Log+In
+          output:
+            no_log_contains: id "9522510"

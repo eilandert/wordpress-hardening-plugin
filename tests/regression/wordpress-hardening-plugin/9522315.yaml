@@ -1,0 +1,79 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522315.yaml
+tests:
+  - test_title: 9522315-1
+    desc: Test if XSS in login username is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              Content-Type: application/x-www-form-urlencoded
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: |
+              log=<script>alert(1)</script>&pwd=password&wp-submit=Log+In
+          output:
+            log_contains: id "9522315"
+  - test_title: 9522315-2
+    desc: Test if script tag in password field is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              Content-Type: application/x-www-form-urlencoded
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: |
+              log=admin&pwd=<script>document.cookie='stolen'</script>&wp-submit=Log+In
+          output:
+            log_contains: id "9522315"
+  - test_title: 9522315-3
+    desc: Test if eval() injection in login is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              Content-Type: application/x-www-form-urlencoded
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: |
+              log=eval(atob('aGVsbG8='))&pwd=password&wp-submit=Log+In
+          output:
+            log_contains: id "9522315"
+  - test_title: 9522315-4
+    desc: Test that legitimate login is not blocked (FP check)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+              Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+              Content-Type: application/x-www-form-urlencoded
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: |
+              log=myusername&pwd=mysecurepassword123&wp-submit=Log+In&redirect_to=/wp-admin/&testcookie=1
+          output:
+            log_not_contains: id "9522315"

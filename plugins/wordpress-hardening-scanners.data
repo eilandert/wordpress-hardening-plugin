@@ -1,0 +1,55 @@
+# Known security scanner and automated tool user agents
+# Used by rule 9522311 (@pmFromFile)
+# All entries are lowercase; ModSecurity applies t:lowercase before matching
+nikto
+sqlmap
+masscan
+nmap
+acunetix
+burpsuite
+nessus
+openvas
+w3af
+dirbuster
+gobuster
+feroxbuster
+wfuzz
+hydra
+medusa
+skipfish
+whatweb
+wpscan
+joomscan
+vega
+appscan
+webinspect
+qualysguard
+nexpose
+core impact
+canvas
+metasploit
+zgrab
+zgrab2
+zmap
+shodan
+censys
+binaryedge
+fonseimporter
+python-requests
+curl/
+wget/
+go-http-client
+libwww-perl
+lwp::simple
+java/
+jakarta commons-httpclient
+ahrefsbot
+semrushbot
+majestic
+mj12bot
+dotbot
+petalbot
+rogerbot
+seokicks
+siteauditbot
+facebookexternalhit/scanner

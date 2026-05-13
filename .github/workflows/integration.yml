@@ -3,5 +3,116 @@ on: [push, pull_request]          # yamllint disable-line rule:truthy
 name: Integration tests
 
 jobs:
+  validate-gates:
+    name: Validate Gate Variables
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Verify REST API gate coverage
+        run: |
+          # Verify that rule 9522207 is enclosed within the REST API gate markers
+          echo "Checking that rule 9522207 respects TX:wphard.block_rest_api gate..."
+          if grep -q 'BEGIN_WPHARD_BLOCK_REST_API_ROOT' plugins/*.conf && \
+             grep -A 30 'BEGIN_WPHARD_BLOCK_REST_API_ROOT' plugins/*.conf | grep -q 'id:9522207'; then
+            echo "✓ Rule 9522207 is within REST API gate markers"
+          else
+            echo "ERROR: Rule 9522207 is not enclosed within BEGIN/END_WPHARD_BLOCK_REST_API_ROOT markers"
+            exit 1
+          fi
+
+      - name: Verify new rule gate coverage
+        run: |
+          # Verify each new blocking rule is enclosed within its gate markers
+          echo "Checking new rules respect their gate markers..."
+          declare -A GATES=(
+            [9522301]="BEGIN_WPHARD_BLOCK_EDITOR_ACCESS"
+            [9522303]="BEGIN_WPHARD_BLOCK_BACKUP_FILES"
+            [9522305]="BEGIN_WPHARD_BLOCK_DB_FILES"
+            [9522307]="BEGIN_WPHARD_BLOCK_UPLOAD_TRAVERSAL"
+            [9522309]="BEGIN_WPHARD_BLOCK_NULL_BYTES"
+            [9522311]="BEGIN_WPHARD_BLOCK_SCANNERS"
+            [9522313]="BEGIN_WPHARD_BLOCK_DEBUG_PROBES"
+            [9522315]="BEGIN_WPHARD_BLOCK_LOGIN_INJECTION"
+            [9522317]="BEGIN_WPHARD_BLOCK_DANGEROUS_ADMIN"
+          )
+          FAILED=0
+          for ruleid in "${!GATES[@]}"; do
+            marker="${GATES[$ruleid]}"
+            if grep -q "$marker" plugins/*.conf && \
+               grep -A 30 "$marker" plugins/*.conf | grep -q "id:$ruleid"; then
+              echo "✓ Rule $ruleid is within $marker gate markers"
+            else
+              echo "ERROR: Rule $ruleid does not properly check its gate (marker: $marker)"
+              FAILED=1
+            fi
+          done
+          [ "$FAILED" -eq 0 ] || exit 1
+
+      - name: Verify rate limiting gate coverage
+        run: |
+          # Verify that rate limiting rules are enclosed within gate markers
+          echo "Checking rate limiting rules respect their gate markers..."
+          if grep -q 'BEGIN_WPHARD_RATELIMIT_LOGIN' plugins/*.conf && \
+             grep -A 50 'BEGIN_WPHARD_RATELIMIT_LOGIN' plugins/*.conf | grep -q 'id:9522411'; then
+            echo "✓ Rate limiting rules are within gate markers"
+          else
+            echo "ERROR: Rate limiting rules do not respect BEGIN/END_WPHARD_RATELIMIT_LOGIN markers"
+            exit 1
+          fi
+
+      - name: Verify GeoIP gate coverage
+        run: |
+          # Verify that GeoIP blocking rule 9522510 is enclosed within gate markers
+          echo "Checking GeoIP rules respect their gate markers..."
+          if grep -q 'BEGIN_WPHARD_GEOIP_LOGIN' plugins/*.conf && \
+             grep -A 20 'BEGIN_WPHARD_GEOIP_LOGIN' plugins/*.conf | grep -q 'id:9522510'; then
+            echo "✓ GeoIP rules are within gate markers"
+          else
+            echo "ERROR: GeoIP rules do not respect BEGIN/END_WPHARD_GEOIP_LOGIN markers"
+            exit 1
+          fi
+
+      - name: Verify IP reputation gate coverage
+        run: |
+          # Verify that IP reputation blocking rules are enclosed within gate markers
+          echo "Checking IP reputation rules respect their gate markers..."
+          if grep -q 'BEGIN_WPHARD_IP_REPUTATION' plugins/*.conf && \
+             grep -A 30 'BEGIN_WPHARD_IP_REPUTATION' plugins/*.conf | grep -q 'id:9522603'; then
+            echo "✓ IP reputation rules are within gate markers"
+          else
+            echo "ERROR: IP reputation rules do not respect BEGIN/END_WPHARD_IP_REPUTATION markers"
+            exit 1
+          fi
+
+      - name: Verify rule parameters
+        run: |
+          # Ensure required rule attributes are present
+          echo "Validating rule parameter consistency..."
+          for ruleid in 9522102 9522104 9522107 9522109 9522111 9522150 9522151 9522152 9522153 9522154 9522155 9522200 9522202 9522203 9522205 9522206 9522207 \
+                        9522301 9522303 9522305 9522307 9522309 9522311 9522313 9522315 9522317 \
+                        9522400 9522410 9522411 9522412 9522413 \
+                        9522046 9522500 9522501 9522503 9522504 9522505 9522506 9522507 9522508 9522510 \
+                        9522047 9522600 9522601 9522602 9522603 9522604; do
+            if ! grep "id:$ruleid" plugins/*.conf > /dev/null; then
+              echo "ERROR: Rule ID $ruleid not found"
+              exit 1
+            fi
+          done
+          echo "✓ All expected rules present"
+
   integration-tests:
+    needs: validate-gates
     uses: coreruleset/crs-plugin-test-action/.github/workflows/integration.yaml@main
+    with:
+      backends: '["nginx"]'
+      crs-config: |
+        # Enable GeoIP-based login access control for integration tests.
+        # The allowed-countries data file (login-countries.data) is empty by default,
+        # so any request with a country header is blocked — allowing tests to verify
+        # both the block path (with CF-IPCountry) and the skip paths (no header / RFC1918).
+        SecAction "id:9519990,phase:1,nolog,pass,t:none,setvar:tx.wphard.geoip_login_enabled=1"
+        # Enable IP reputation blocklist for integration tests.
+        # The data file ships with 192.0.2.0/24 (RFC 5737 documentation range, never on internet)
+        # so tests can send X-Forwarded-For: 192.0.2.x to verify blocking.
+        SecAction "id:9519991,phase:1,nolog,pass,t:none,setvar:tx.wphard.ip_reputation_enabled=1"
