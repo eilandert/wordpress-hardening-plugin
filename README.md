@@ -4,6 +4,8 @@
 This plugin contains extra rules to enhance the security of wordpress installations with the OWASP Core Rule Set.
 It's encouraged to install the wordpress-exclusions-rules-plugin as well, as we only add extra blocks in this plugin.
 
+More information: https://deb.myguard.nl/2026/05/wordpress-hardening-plugin-modsecurity-crs-block-attacks/
+
 The idea is to enhance the security of WordPress while minimizing the impact on PHP/SQL performance and eliminating the need for additional wordpress security plugins without interfering with wordpress or owasp.
 
 What this plugin does so far:
