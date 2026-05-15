@@ -165,3 +165,25 @@ tests:
             data: log=admin&pwd=wrong
           output:
             log_not_contains: id "9522411"
+  - test_title: 9522410-10
+    desc: >
+      Regression for the chained-skipAfter (AH00526) bug on the rate-limit
+      whitelist (rule 9522413). With NO X-Forwarded-For header the whitelist
+      falls back to REMOTE_ADDR via the chain. The go-ftw harness connects from
+      loopback (127.0.0.1), which is whitelisted, so the rate-limit group must
+      be skipped and counter rule 9522411 must NOT fire. Exercises the exact
+      chain that previously carried skipAfter on its inner SecRule.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+              Content-Type: application/x-www-form-urlencoded
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=wrong
+          output:
+            log_not_contains: id "9522411"

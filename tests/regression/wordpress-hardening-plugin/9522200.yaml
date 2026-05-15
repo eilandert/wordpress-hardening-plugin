@@ -124,3 +124,67 @@ tests:
               text
           output:
             no_log_contains: id "9522200"
+  - test_title: 9522200-8
+    desc: >
+      Edge: the allow-list anchors index.php to a path boundary. A look-alike
+      filename like "/myindex.php" is NOT the real /index.php and must still be
+      blocked (the negative lookahead requires (^|/) before "index").
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /myindex.php
+          output:
+            log_contains: id "9522200"
+  - test_title: 9522200-9
+    desc: >
+      Edge: a nested non-whitelisted PHP file under a deep path must be blocked
+      (e.g. /wp-content/uploads/evil.php — a classic upload-shell location).
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-content/uploads/2026/evil.php
+          output:
+            log_contains: id "9522200"
+  - test_title: 9522200-10
+    desc: >
+      Edge: index.php with a query string is still the legitimate front
+      controller and must NOT be blocked. The regex anchors ".php$" on
+      REQUEST_FILENAME (path only, query stripped), so this must pass.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /index.php?rest_route=/wp/v2/posts
+          output:
+            no_log_contains: id "9522200"
+  - test_title: 9522200-11
+    desc: >
+      KNOWN SECURITY LIMITATION (pinned): the allow-list matches "/wp-admin/"
+      ANYWHERE in the path, not only a real top-level /wp-admin/. An attacker
+      who can create a "wp-admin" directory under uploads can serve a PHP shell
+      at /wp-content/uploads/wp-admin/shell.php and rule 9522200 does NOT fire.
+      This test pins the CURRENT (vulnerable) behaviour so that a future fix
+      anchoring the allow-list to ^/wp-admin/ will deliberately fail here,
+      forcing this assertion to be flipped to log_contains once fixed.
+      TODO(security): anchor the wp-admin allow-list to the start of the path.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-content/uploads/wp-admin/shell.php
+          output:
+            no_log_contains: id "9522200"

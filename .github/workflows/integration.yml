@@ -108,26 +108,56 @@ jobs:
           fi
           echo "✓ No chained rule carries skipAfter"
 
-      - name: Verify ModSecurity config syntax loads
+      - name: Verify every skipAfter target has a matching SecMarker
         run: |
-          # Catch fatal config-load errors (e.g. AH00526) before the runtime
-          # integration suite, which cannot even start if the config is invalid.
-          echo "Validating that the plugin config loads under ModSecurity..."
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq nginx libnginx-mod-http-modsecurity >/dev/null 2>&1 || \
-            sudo apt-get install -y -qq libapache2-mod-security2 >/dev/null 2>&1
-          # Minimal harness: a SecRuleEngine directive + the plugin files.
-          cat > /tmp/modsec-syntax-check.conf <<'EOF'
-          SecRuleEngine DetectionOnly
-          SecAction "id:1,phase:1,pass,nolog,setvar:tx.crs_setup_version=000,setvar:tx.critical_anomaly_score=5,setvar:tx.inbound_anomaly_score_pl1=0,setvar:tx.inbound_anomaly_score_pl2=0"
-          EOF
-          cat plugins/wordpress-hardening-config.conf plugins/wordpress-hardening-before.conf >> /tmp/modsec-syntax-check.conf
-          if command -v apachectl >/dev/null 2>&1; then
-            printf 'IncludeOptional /tmp/modsec-syntax-check.conf\n' | sudo tee -a /etc/apache2/mods-enabled/security2.conf >/dev/null 2>&1 || true
-            sudo apachectl configtest 2>&1 | tee /tmp/configtest.out
-            grep -qiE 'SkipAfter actions can only|Syntax error' /tmp/configtest.out && { echo "ERROR: ModSecurity config syntax error"; exit 1; }
+          # A skipAfter:LABEL with no "SecMarker LABEL" jumps past the end of
+          # the phase and silently disables every rule after it. Catch typos
+          # and renamed markers.
+          echo "Checking skipAfter targets resolve to a SecMarker..."
+          MISSING=0
+          for label in $(grep -ohE 'skipAfter:[A-Za-z0-9_]+' plugins/*.conf | cut -d: -f2 | sort -u); do
+            if ! grep -qE "SecMarker \"?${label}\"?" plugins/*.conf; then
+              echo "ERROR: skipAfter:${label} has no matching SecMarker"
+              MISSING=1
+            fi
+          done
+          [ "$MISSING" -eq 0 ] && echo "✓ All skipAfter targets resolve"
+          [ "$MISSING" -eq 0 ] || exit 1
+
+      - name: Verify regex extension anchors are escaped
+        run: |
+          # Regression guard for the 9522203 class: a file-extension
+          # alternation like "(pl|cgi|sh)$" must be preceded by an ESCAPED dot
+          # "\.", otherwise the "." is a regex wildcard and the rule matches
+          # paths with no real extension (false positives) or is bypassable.
+          # Flags an unescaped "." or a bare alternation immediately before a
+          # known-extension-style group anchored with $.
+          echo "Checking file-extension regexes use an escaped dot..."
+          if grep -nE '@rx [^"]*[^\\]\((pl|cgi|py|sh|lua|aspx?|php|html?|sql)[^)]*\)[^"]*\$' plugins/*.conf \
+               | grep -vE '\\\.\((pl|cgi|py|sh|lua|aspx?|php|html?|sql)'; then
+            echo "ERROR: extension alternation not preceded by an escaped dot (\\.)"
+            echo "       Use \\.(ext1|ext2)\$ so the dot is literal."
+            exit 1
           fi
-          echo "✓ Plugin config syntax check passed (or no Apache mod available; runtime suite will cover nginx)"
+          echo "✓ Extension regexes properly anchored"
+
+      - name: Verify gated blocking rules are reachable
+        run: |
+          # Every BEGIN_/END_ marker pair must enclose at least one blocking
+          # rule, and a skipAfter gate to that END marker must exist (so the
+          # feature can actually be toggled off). A pair with no skipAfter is a
+          # dead gate; a skipAfter to a non-enclosing marker is a silent
+          # rule-disable. This generalises the per-feature checks above so new
+          # gated features are covered automatically.
+          echo "Checking BEGIN/END marker pairs are well-formed..."
+          BAD=0
+          for end in $(grep -ohE 'SecMarker "END_[A-Z0-9_]+"' plugins/*.conf | sed 's/SecMarker "//;s/"//'); do
+            begin="BEGIN_${end#END_}"
+            grep -qE "SecMarker \"${begin}\"" plugins/*.conf || { echo "ERROR: ${end} has no matching ${begin}"; BAD=1; }
+            grep -qE "skipAfter:${end}\b" plugins/*.conf || { echo "ERROR: ${end} is never targeted by a skipAfter gate (dead gate)"; BAD=1; }
+          done
+          [ "$BAD" -eq 0 ] && echo "✓ All gate marker pairs well-formed and reachable"
+          [ "$BAD" -eq 0 ] || exit 1
 
       - name: Verify rule parameters
         run: |

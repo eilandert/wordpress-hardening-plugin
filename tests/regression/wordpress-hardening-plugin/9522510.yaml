@@ -151,3 +151,29 @@ tests:
             data: log=admin&pwd=password&wp-submit=Log+In
           output:
             log_contains: id "9522510"
+
+  - test_title: 9522510-8
+    desc: >
+      Regression for the chained-skipAfter (AH00526) bug on the GeoIP whitelist
+      (rule 9522507). A blocked-country header (CF-IPCountry: CN) IS present so
+      the no-country gate 9522504 does NOT short-circuit, but there is NO
+      X-Forwarded-For header, so the whitelist falls back to REMOTE_ADDR via
+      the 9522507 chain. The harness source is loopback (127.0.0.1,
+      whitelisted) so the GeoIP block must be skipped and rule 9522510 must NOT
+      fire. Exercises the exact chain that previously carried skipAfter on its
+      inner SecRule.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Content-Type: application/x-www-form-urlencoded
+              CF-IPCountry: CN
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=password&wp-submit=Log+In
+          output:
+            no_log_contains: id "9522510"

@@ -56,3 +56,35 @@ tests:
               text
           output:
             log_contains: id "9522307"
+  - test_title: 9522307-4
+    desc: >
+      Negative: a normal uploads request with no ".." sequence must NOT be
+      flagged as traversal.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-content/uploads/2026/05/photo.jpg
+          output:
+            no_log_contains: id "9522307"
+  - test_title: 9522307-5
+    desc: >
+      KNOWN LIMITATION (pinned): the rule matches a literal ".." but the
+      transforms (lowercase,normalizePath,trim) do NOT URL-decode, so a
+      percent-encoded traversal "%2e%2e" slips past and rule 9522307 does NOT
+      fire. This pins the current behaviour; adding t:urlDecodeUni to the rule
+      would close the gap and should flip this to log_contains.
+      TODO(security): add t:urlDecodeUni to rule 9522307.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-content/uploads/%2e%2e/%2e%2e/wp-config.php
+          output:
+            no_log_contains: id "9522307"
