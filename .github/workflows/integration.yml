@@ -85,6 +85,50 @@ jobs:
             exit 1
           fi
 
+      - name: Verify skipAfter only on chain-starter rules
+        run: |
+          # Regression guard for the AH00526 fatal:
+          #   "ModSecurity: SkipAfter actions can only be specified by chain starter rules"
+          # In a chained rule, skipAfter must live in the action list of the
+          # CHAIN STARTER (the outer SecRule), never in the inner/secondary
+          # SecRule. Inner-chain rules are written indented in this codebase,
+          # so any indented SecRule whose continued action block contains
+          # skipAfter is the broken pattern.
+          echo "Checking that no chained (inner) SecRule carries a skipAfter action..."
+          cat > /tmp/chained-skipafter.awk <<'AWK'
+          /^[ \t]+SecRule/ { inrule = 1 }
+          inrule && /skipAfter/ { print FILENAME ":" FNR ": chained skipAfter (move it to the chain starter)"; bad = 1 }
+          inrule && !/\\[ \t]*$/ { inrule = 0 }
+          END { exit bad ? 1 : 0 }
+          AWK
+          if ! awk -f /tmp/chained-skipafter.awk plugins/*.conf; then
+            echo "ERROR: skipAfter found on a chained (inner) SecRule."
+            echo "       Move skipAfter into the chain-starter (outer) rule's action list."
+            exit 1
+          fi
+          echo "✓ No chained rule carries skipAfter"
+
+      - name: Verify ModSecurity config syntax loads
+        run: |
+          # Catch fatal config-load errors (e.g. AH00526) before the runtime
+          # integration suite, which cannot even start if the config is invalid.
+          echo "Validating that the plugin config loads under ModSecurity..."
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq nginx libnginx-mod-http-modsecurity >/dev/null 2>&1 || \
+            sudo apt-get install -y -qq libapache2-mod-security2 >/dev/null 2>&1
+          # Minimal harness: a SecRuleEngine directive + the plugin files.
+          cat > /tmp/modsec-syntax-check.conf <<'EOF'
+          SecRuleEngine DetectionOnly
+          SecAction "id:1,phase:1,pass,nolog,setvar:tx.crs_setup_version=000,setvar:tx.critical_anomaly_score=5,setvar:tx.inbound_anomaly_score_pl1=0,setvar:tx.inbound_anomaly_score_pl2=0"
+          EOF
+          cat plugins/wordpress-hardening-config.conf plugins/wordpress-hardening-before.conf >> /tmp/modsec-syntax-check.conf
+          if command -v apachectl >/dev/null 2>&1; then
+            printf 'IncludeOptional /tmp/modsec-syntax-check.conf\n' | sudo tee -a /etc/apache2/mods-enabled/security2.conf >/dev/null 2>&1 || true
+            sudo apachectl configtest 2>&1 | tee /tmp/configtest.out
+            grep -qiE 'SkipAfter actions can only|Syntax error' /tmp/configtest.out && { echo "ERROR: ModSecurity config syntax error"; exit 1; }
+          fi
+          echo "✓ Plugin config syntax check passed (or no Apache mod available; runtime suite will cover nginx)"
+
       - name: Verify rule parameters
         run: |
           # Ensure required rule attributes are present
