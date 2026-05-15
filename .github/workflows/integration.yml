@@ -141,22 +141,31 @@ jobs:
           fi
           echo "✓ Extension regexes properly anchored"
 
-      - name: Verify gated blocking rules are reachable
+      - name: Verify markers are well-formed and reachable
         run: |
-          # Every BEGIN_/END_ marker pair must enclose at least one blocking
-          # rule, and a skipAfter gate to that END marker must exist (so the
-          # feature can actually be toggled off). A pair with no skipAfter is a
-          # dead gate; a skipAfter to a non-enclosing marker is a silent
-          # rule-disable. This generalises the per-feature checks above so new
-          # gated features are covered automatically.
-          echo "Checking BEGIN/END marker pairs are well-formed..."
+          # Two valid marker shapes:
+          #  1. Feature gate: BEGIN_X / END_X pair (every BEGIN must have its
+          #     END and vice-versa).
+          #  2. Skip target: END_X (or bare label) with NO BEGIN, used purely
+          #     as a skipAfter jump destination (PL gates, static fast-path).
+          # Every marker, whichever shape, MUST be the target of at least one
+          # skipAfter or it is unreachable dead code. This generalises the
+          # per-feature checks so new gates/skip-targets are covered too.
+          echo "Checking markers are well-formed and reachable..."
           BAD=0
           for end in $(grep -ohE 'SecMarker "END_[A-Z0-9_]+"' plugins/*.conf | sed 's/SecMarker "//;s/"//'); do
             begin="BEGIN_${end#END_}"
-            grep -qE "SecMarker \"${begin}\"" plugins/*.conf || { echo "ERROR: ${end} has no matching ${begin}"; BAD=1; }
-            grep -qE "skipAfter:${end}\b" plugins/*.conf || { echo "ERROR: ${end} is never targeted by a skipAfter gate (dead gate)"; BAD=1; }
+            if ! grep -qE "SecMarker \"${begin}\"" plugins/*.conf; then
+              # skip-only target is allowed, but must be jumped to
+              grep -qE "skipAfter:${end}\b" plugins/*.conf || { echo "ERROR: ${end} has no BEGIN_ and no skipAfter targets it (dead marker)"; BAD=1; }
+            fi
+            grep -qE "skipAfter:${end}\b" plugins/*.conf || { echo "ERROR: ${end} is never targeted by a skipAfter (dead gate)"; BAD=1; }
           done
-          [ "$BAD" -eq 0 ] && echo "✓ All gate marker pairs well-formed and reachable"
+          for begin in $(grep -ohE 'SecMarker "BEGIN_[A-Z0-9_]+"' plugins/*.conf | sed 's/SecMarker "//;s/"//'); do
+            end="END_${begin#BEGIN_}"
+            grep -qE "SecMarker \"${end}\"" plugins/*.conf || { echo "ERROR: ${begin} has no matching ${end}"; BAD=1; }
+          done
+          [ "$BAD" -eq 0 ] && echo "✓ All markers well-formed and reachable"
           [ "$BAD" -eq 0 ] || exit 1
 
       - name: Verify rule parameters

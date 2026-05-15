@@ -91,15 +91,30 @@ else
   ok "extension regexes properly anchored"
 fi
 
-# ── BEGIN/END gate pairs well-formed and reachable ──────────────────────────
-note "gate marker pairs well-formed and reachable"
+# ── Markers well-formed and reachable ───────────────────────────────────────
+# Two valid marker shapes:
+#   1. Feature gate: a BEGIN_X / END_X pair (END must have a BEGIN).
+#   2. Skip target:  an END_X (or bare label) with NO BEGIN, used purely as a
+#      skipAfter jump destination (e.g. PL gates, the static fast-path).
+# Either way EVERY marker must be targeted by at least one skipAfter, else it
+# is dead code; and a BEGIN_X must always have its END_X.
+note "markers well-formed and reachable"
 GP_BAD=0
 for end in $(grep -ohE 'SecMarker "END_[A-Z0-9_]+"' plugins/*.conf | sed 's/SecMarker "//;s/"//'); do
   begin="BEGIN_${end#END_}"
-  grep -qE "SecMarker \"${begin}\"" plugins/*.conf || { err "${end} has no matching ${begin}"; GP_BAD=1; }
-  grep -qE "skipAfter:${end}\b" plugins/*.conf || { err "${end} never targeted by a skipAfter gate (dead gate)"; GP_BAD=1; }
+  if grep -qE "SecMarker \"${begin}\"" plugins/*.conf; then
+    : # paired feature gate — fine
+  else
+    # skip-only target: allowed, but it MUST be jumped to by a skipAfter
+    grep -qE "skipAfter:${end}\b" plugins/*.conf || { err "${end} has no BEGIN_ and no skipAfter targets it (dead marker)"; GP_BAD=1; }
+  fi
+  grep -qE "skipAfter:${end}\b" plugins/*.conf || { err "${end} never targeted by a skipAfter (dead gate)"; GP_BAD=1; }
 done
-[ "$GP_BAD" -eq 0 ] && ok "all gate marker pairs well-formed and reachable"
+for begin in $(grep -ohE 'SecMarker "BEGIN_[A-Z0-9_]+"' plugins/*.conf | sed 's/SecMarker "//;s/"//'); do
+  end="END_${begin#BEGIN_}"
+  grep -qE "SecMarker \"${end}\"" plugins/*.conf || { err "${begin} has no matching ${end}"; GP_BAD=1; }
+done
+[ "$GP_BAD" -eq 0 ] && ok "all markers well-formed and reachable"
 
 # ── integration.yml: gate markers enclose their blocking rules ──────────────
 note "gate marker coverage"

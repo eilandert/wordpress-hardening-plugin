@@ -170,14 +170,10 @@ tests:
             no_log_contains: id "9522200"
   - test_title: 9522200-11
     desc: >
-      KNOWN SECURITY LIMITATION (pinned): the allow-list matches "/wp-admin/"
-      ANYWHERE in the path, not only a real top-level /wp-admin/. An attacker
-      who can create a "wp-admin" directory under uploads can serve a PHP shell
-      at /wp-content/uploads/wp-admin/shell.php and rule 9522200 does NOT fire.
-      This test pins the CURRENT (vulnerable) behaviour so that a future fix
-      anchoring the allow-list to ^/wp-admin/ will deliberately fail here,
-      forcing this assertion to be flipped to log_contains once fixed.
-      TODO(security): anchor the wp-admin allow-list to the start of the path.
+      S4 FIXED (regression): the wp-admin allow-list is now anchored to the
+      START of the path (^/wp-admin/), so an attacker-created "wp-admin"
+      directory under uploads can NO LONGER be used to serve a PHP shell.
+      /wp-content/uploads/wp-admin/shell.php MUST now be blocked.
     stages:
       - stage:
           input:
@@ -186,5 +182,35 @@ tests:
             port: 80
             method: GET
             uri: /wp-content/uploads/wp-admin/shell.php
+          output:
+            log_contains: id "9522200"
+  - test_title: 9522200-12
+    desc: >
+      A genuine top-level /wp-admin/ PHP endpoint must still be allowed after
+      the anchor fix (no false positive on legitimate admin traffic).
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-admin/options-general.php
+          output:
+            no_log_contains: id "9522200"
+  - test_title: 9522200-13
+    desc: >
+      P2 regression: a long crafted URI with many segments and no ".php" must
+      be handled without catastrophic backtracking (the rule is now a cheap
+      anchored "\.php$" chain). It must NOT be blocked (not a PHP request) and
+      must return promptly.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/notphp
           output:
             no_log_contains: id "9522200"
