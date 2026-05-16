@@ -5,8 +5,36 @@ meta:
   enabled: true
   name: 9522102.yaml
 tests:
-  - test_title: 9522102
-    desc: Test if xmlrpc.php is not blocked (default)
+  - test_title: 9522102-1
+    desc: >
+      xmlrpc.php from a non-whitelisted client IP is blocked (block_xmlrpc is
+      ON by default). X-Forwarded-For is a public IP so neither whitelist path
+      applies. Rule 9522102 must fire.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              X-Forwarded-For: 8.8.8.8
+            port: 80
+            method: GET
+            uri: /xmlrpc.php
+            data: |
+              text
+          output:
+            log_contains: id "9522102"
+  - test_title: 9522102-2
+    desc: >
+      Regression for the chained-skipAfter (AH00526) bug. Request has NO
+      X-Forwarded-For header, so the whitelist falls back to REMOTE_ADDR via
+      the chain rule 9522153. REMOTE_ADDR is loopback (127.0.0.1), so the chain
+      must fire skipAfter:END_WPHARD_XMLRPC and rule 9522102 must NOT fire.
+      Before the fix, skipAfter sat on the inner SecRule (a fatal config error,
+      and once "fixed" naively the whitelist would silently never apply). This
+      asserts the no-XFF loopback whitelist path actually works.
     stages:
       - stage:
           input:
@@ -21,4 +49,26 @@ tests:
             data: |
               text
           output:
-            log_contains: id "9522102"
+            log_not_contains: id "9522102"
+  - test_title: 9522102-3
+    desc: >
+      Same no-XFF whitelist fallback, but REMOTE_ADDR is the test harness
+      loopback while X-Forwarded-For carries an RFC 1918 address: the
+      X-Forwarded-For whitelist (rule 9522150) must skip the block.
+      Rule 9522102 must NOT fire.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+              X-Forwarded-For: 10.20.30.40
+            port: 80
+            method: GET
+            uri: /xmlrpc.php
+            data: |
+              text
+          output:
+            log_not_contains: id "9522102"

@@ -108,3 +108,72 @@ tests:
             data: log=admin&pwd=password&wp-submit=Log+In
           output:
             no_log_contains: id "9522510"
+
+  - test_title: 9522510-6
+    desc: >
+      Regression: country codes from proxies may arrive lowercase. Phase-1
+      extraction must accept [A-Za-z]{2} and normalise with t:uppercase so a
+      lowercase CF-IPCountry still drives the block. Previously the strict
+      ^[A-Z]{2}$ extraction failed open on lowercase input.
+      Rule 9522510 must fire for "cn".
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Content-Type: application/x-www-form-urlencoded
+              CF-IPCountry: cn
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=password&wp-submit=Log+In
+          output:
+            log_contains: id "9522510"
+
+  - test_title: 9522510-7
+    desc: >
+      Regression: lowercase X-GeoIP-Country (generic proxy fallback) must also
+      be normalised and drive the block. Rule 9522510 must fire for "ru".
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Content-Type: application/x-www-form-urlencoded
+              X-GeoIP-Country: ru
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=password&wp-submit=Log+In
+          output:
+            log_contains: id "9522510"
+
+  - test_title: 9522510-8
+    desc: >
+      Regression for the chained-skipAfter (AH00526) bug on the GeoIP whitelist
+      (rule 9522507). A blocked-country header (CF-IPCountry: CN) IS present so
+      the no-country gate 9522504 does NOT short-circuit, but there is NO
+      X-Forwarded-For header, so the whitelist falls back to REMOTE_ADDR via
+      the 9522507 chain. The harness source is loopback (127.0.0.1,
+      whitelisted) so the GeoIP block must be skipped and rule 9522510 must NOT
+      fire. Exercises the exact chain that previously carried skipAfter on its
+      inner SecRule.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Content-Type: application/x-www-form-urlencoded
+              CF-IPCountry: CN
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: log=admin&pwd=password&wp-submit=Log+In
+          output:
+            no_log_contains: id "9522510"

@@ -56,3 +56,50 @@ tests:
               text
           output:
             log_contains: id "9522307"
+  - test_title: 9522307-4
+    desc: >
+      Negative: a normal uploads request with no ".." sequence must NOT be
+      flagged as traversal.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-content/uploads/2026/05/photo.jpg
+          output:
+            no_log_contains: id "9522307"
+  - test_title: 9522307-5
+    desc: >
+      S6 FIXED (regression): the rule now applies t:urlDecodeUni and no longer
+      normalizePath-collapses the traversal before matching, so a
+      percent-encoded traversal "%2e%2e" is decoded to ".." and MUST now be
+      blocked. Closes the previous bypass.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-content/uploads/%2e%2e/%2e%2e/wp-config.php
+          output:
+            log_contains: id "9522307"
+  - test_title: 9522307-6
+    desc: >
+      S6 regression: double-encoded traversal "%252e%252e" — the first
+      urlDecodeUni yields "%2e%2e"; this documents that single-pass decoding
+      does NOT catch double-encoding (rule has one urlDecodeUni). Pinned as a
+      known residual limitation so a future second-decode change is noticed.
+      TODO(security): consider a second t:urlDecodeUni on 9522307.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-content/uploads/%252e%252e/wp-config.php
+          output:
+            no_log_contains: id "9522307"

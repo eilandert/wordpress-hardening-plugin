@@ -56,3 +56,63 @@ tests:
               text
           output:
             log_contains: id "9522206"
+  - test_title: 9522206-4
+    desc: >
+      Regression: the sensitive-files extension must be anchored. A filename
+      that merely CONTAINS a sensitive token but does not end on it
+      (e.g. ".confixyz") must NOT be blocked. Guards against the old
+      unanchored "($|/)?" regex that matched substrings.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            port: 80
+            method: GET
+            uri: /assets/app.confixyz
+            data: |
+              text
+          output:
+            log_not_contains: id "9522206"
+  - test_title: 9522206-5
+    desc: >
+      Regression: ".sql" only matched at a real boundary, not as a substring
+      of a longer extension. "/data.sqlite" must NOT be blocked.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/html
+            port: 80
+            method: GET
+            uri: /db/data.sqlite
+            data: |
+              text
+          output:
+            log_not_contains: id "9522206"
+  - test_title: 9522206-6
+    desc: >
+      Regression: ".DS_Store" must be blocked. The rule has t:lowercase, so the
+      pattern must list the lowercased "ds_store" token (the old "DS_STORE"
+      token was dead code that never matched).
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept: text/html
+            port: 80
+            method: GET
+            uri: /.DS_Store
+            data: |
+              text
+          output:
+            log_contains: id "9522206"

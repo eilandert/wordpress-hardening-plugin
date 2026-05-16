@@ -79,3 +79,63 @@ tests:
             uri: /
           output:
             log_contains: id "9522603"
+
+  - test_title: 9522603-5
+    desc: >
+      S3 regression (multi-value XFF smuggling): the client IP resolver takes
+      ONLY the first hop. A blocklisted first hop followed by a spoofed private
+      IP ("192.0.2.50, 10.0.0.1") must STILL be blocked — the attacker cannot
+      append a private token to dodge the reputation check.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              X-Forwarded-For: "192.0.2.50, 10.0.0.1"
+            port: 80
+            method: GET
+            uri: /
+          output:
+            log_contains: id "9522603"
+
+  - test_title: 9522603-6
+    desc: >
+      S3 regression (inverse): a NON-blocklisted first hop followed by a
+      blocklisted later token ("8.8.8.8, 192.0.2.50") must NOT be blocked —
+      only the genuine first hop is trusted, so a later forged token cannot be
+      used to frame another IP either. Rule 9522603 must NOT fire.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              X-Forwarded-For: "8.8.8.8, 192.0.2.50"
+            port: 80
+            method: GET
+            uri: /
+          output:
+            no_log_contains: id "9522603"
+
+  - test_title: 9522603-7
+    desc: >
+      S2 regression (malformed XFF): a junk X-Forwarded-For that yields no
+      valid leading IPv4 must fall back to REMOTE_ADDR (loopback in the
+      harness, not blocklisted), so the request is NOT blocked and no spoofed
+      value is honoured. Rule 9522603 must NOT fire.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              X-Forwarded-For: "not-an-ip; DROP TABLE"
+            port: 80
+            method: GET
+            uri: /
+          output:
+            no_log_contains: id "9522603"

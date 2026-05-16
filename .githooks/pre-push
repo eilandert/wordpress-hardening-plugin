@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Runs the local CI mirror before every push. Blocks the push on failure.
+# Enable once with:  git config core.hooksPath .githooks
+# Bypass in an emergency with:  git push --no-verify
+set -e
+echo "pre-push: running local CI checks (scripts/ci-local.sh)..."
+exec "$(git rev-parse --show-toplevel)/scripts/ci-local.sh"

@@ -141,3 +141,46 @@ tests:
               text
           output:
             log_contains: id "9522104"
+  - test_title: 9522104-9
+    desc: >
+      Regression: "author=" must only match as a path/query token, preceded by
+      / ? or &. A word like "coauthor=5" must NOT be treated as enumeration.
+      Guards against the old unanchored "author\=" which matched substrings.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /articles?coauthor=5
+          output:
+            no_log_contains: id "9522104"
+  - test_title: 9522104-10
+    desc: >
+      Regression: a content page that merely contains the word "authors" must
+      not be flagged. "/our-authors-page" has no author=<digits> token.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /our-authors-page
+          output:
+            no_log_contains: id "9522104"
+  - test_title: 9522104-11
+    desc: >
+      Positive: a real query-string enumeration "?author=42" must still be
+      blocked after the boundary tightening.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /?author=42
+          output:
+            log_contains: id "9522104"
