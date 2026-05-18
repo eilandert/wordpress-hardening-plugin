@@ -1,0 +1,110 @@
+---
+# WAF security corpus: adversarial evasion + false-positive payloads run
+# against the SHARED CRS+plugin image on BOTH engines (ModSecurity v2 and
+# libmodsecurity3 v3). An attack that becomes bypassable — or a rule that
+# starts over-blocking real WordPress traffic — fails this check. Cross-engine
+# by design: a bypass that only works on one engine still fails the badge.
+#
+# Security note: the only run:-context interpolation is github.token; all
+# matrix.* values are author-defined in this file. No untrusted event input.
+on: [push, pull_request]          # yamllint disable-line rule:truthy
+name: WAF security corpus
+
+permissions:
+  contents: read
+
+env:
+  # renovate: datasource=github-releases depName=coreruleset/go-ftw
+  GO_FTW_VERSION: "v2.1.0"
+
+jobs:
+  security-corpus:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - backend: apache
+            engine: "ModSecurity v2"
+            port: 8001
+          - backend: nginx
+            engine: "libmodsecurity3 v3"
+            port: 8002
+    name: "Corpus — ${{ matrix.engine }}"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build shared CRS image
+        run: docker compose -f tests/integration/docker-compose.yml build crs
+
+      - name: Build backend image
+        env:
+          BACKEND: ${{ matrix.backend }}
+        run: docker compose -f tests/integration/docker-compose.yml build "$BACKEND"
+
+      - name: Prepare log file
+        env:
+          BACKEND: ${{ matrix.backend }}
+        run: |
+          mkdir -p "tests/logs/$BACKEND"
+          : > "tests/logs/$BACKEND/audit.log"
+          chmod -R 777 tests/logs
+
+      - name: Start backend
+        env:
+          BACKEND: ${{ matrix.backend }}
+          PORT: ${{ matrix.port }}
+        run: |
+          docker compose -f tests/integration/docker-compose.yml up -d "$BACKEND"
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:${PORT}/"; then
+              echo "backend up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "backend did not become ready"
+          docker compose -f tests/integration/docker-compose.yml logs "$BACKEND"
+          exit 1
+
+      - name: Install go-ftw
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download -R coreruleset/go-ftw \
+            -p 'ftw_*_linux_amd64.tar.gz' -O - "${GO_FTW_VERSION}" \
+            | tar -xzf - ftw
+          chmod +x ftw
+
+      - name: Generate go-ftw config
+        env:
+          BACKEND: ${{ matrix.backend }}
+          PORT: ${{ matrix.port }}
+        run: |
+          {
+            echo '---'
+            echo "logfile: tests/logs/${BACKEND}/audit.log"
+            echo 'testoverride:'
+            echo '  input:'
+            echo '    dest_addr: "127.0.0.1"'
+            echo "    port: ${PORT}"
+          } > tests/integration/.ftw.yml
+
+      - name: Run WAF security corpus
+        run: |
+          ./ftw check -d tests/security --config tests/integration/.ftw.yml
+          ./ftw run   -d tests/security --config tests/integration/.ftw.yml \
+            --show-failures-only
+
+      - name: Dump logs on failure
+        if: failure()
+        env:
+          BACKEND: ${{ matrix.backend }}
+        run: |
+          echo "=== container logs ==="
+          docker compose -f tests/integration/docker-compose.yml logs "$BACKEND" || true
+          echo "=== modsec audit log ==="
+          tail -n 200 "tests/logs/${BACKEND}/audit.log" || true
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f tests/integration/docker-compose.yml down -t 0 || true

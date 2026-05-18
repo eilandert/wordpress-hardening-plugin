@@ -1,0 +1,87 @@
+---
+# Apache httpd + ModSecurity v2 (libapache2-mod-security2).
+# Builds the SHARED CRS+plugin image (tests/integration/crs) and runs the
+# go-ftw regression suite against it. `apache2ctl -t` runs at image build
+# time: an invalid rule (e.g. the AH00526 `t:uppercase` bug) fails the build.
+#
+# Security note: the only ${{ }} in a run: context is github.token; no
+# untrusted event input is interpolated anywhere.
+on: [push, pull_request]          # yamllint disable-line rule:truthy
+name: Apache + ModSecurity v2
+
+permissions:
+  contents: read
+
+env:
+  # renovate: datasource=github-releases depName=coreruleset/go-ftw
+  GO_FTW_VERSION: "v2.1.0"
+
+jobs:
+  apache-modsecurity2:
+    name: Apache + ModSecurity v2
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build shared CRS image
+        run: docker compose -f tests/integration/docker-compose.yml build crs
+
+      - name: Build Apache image (apache2ctl -t — AH00526 gate)
+        run: docker compose -f tests/integration/docker-compose.yml build apache
+
+      - name: Prepare log file
+        run: |
+          mkdir -p tests/logs/apache
+          : > tests/logs/apache/audit.log
+          chmod -R 777 tests/logs
+
+      - name: Start Apache
+        run: |
+          docker compose -f tests/integration/docker-compose.yml up -d apache
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:8001/"; then
+              echo "apache up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "apache did not become ready"
+          docker compose -f tests/integration/docker-compose.yml logs apache
+          exit 1
+
+      - name: Install go-ftw
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download -R coreruleset/go-ftw \
+            -p 'ftw_*_linux_amd64.tar.gz' -O - "${GO_FTW_VERSION}" \
+            | tar -xzf - ftw
+          chmod +x ftw
+
+      - name: Generate go-ftw config
+        run: |
+          {
+            echo '---'
+            echo 'logfile: tests/logs/apache/audit.log'
+            echo 'testoverride:'
+            echo '  input:'
+            echo '    dest_addr: "127.0.0.1"'
+            echo '    port: 8001'
+          } > tests/integration/.ftw.yml
+
+      - name: Run plugin regression suite
+        run: |
+          ./ftw check -d tests/regression --config tests/integration/.ftw.yml
+          ./ftw run   -d tests/regression --config tests/integration/.ftw.yml \
+            --show-failures-only
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          echo "=== container logs ==="
+          docker compose -f tests/integration/docker-compose.yml logs apache || true
+          echo "=== modsec audit log ==="
+          tail -n 200 tests/logs/apache/audit.log || true
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f tests/integration/docker-compose.yml down -t 0 || true

@@ -1,0 +1,6 @@
+
+# integration test runtime logs
+tests/logs/
+
+# go-ftw binary fetched by CI / local runs
+/ftw

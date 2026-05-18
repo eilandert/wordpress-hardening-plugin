@@ -1,0 +1,49 @@
+# Both backends, one shared CRS image.
+#
+#   crs    – builds the shared CRS + plugin tree (no long-running service;
+#            apache & nginx COPY --from it via build arg).
+#   apache – Apache httpd + ModSecurity v2  (port 8001)
+#   nginx  – Angie + libmodsecurity3 v3      (port 8002)
+#
+# Build context is the repo root so the images can COPY plugins/ and
+# tests/integration/. Run from the repo root:
+#   docker compose -f tests/integration/docker-compose.yml build
+#   docker compose -f tests/integration/docker-compose.yml up -d apache nginx
+#
+# Audit logs are exposed on the host under tests/logs/<backend>/audit.log
+# for go-ftw (FTW_LOGFILE).
+services:
+  crs:
+    image: wphard-crs:latest
+    build:
+      context: ../..
+      dockerfile: tests/integration/crs/Dockerfile
+    # Not a running service; just produces the shared image.
+    command: ["true"]
+    restart: "no"
+
+  apache:
+    image: wphard-apache:latest
+    build:
+      context: ../..
+      dockerfile: tests/integration/apache/Dockerfile
+      args:
+        CRS_IMAGE: wphard-crs:latest
+    depends_on: [crs]
+    ports:
+      - "8001:80"
+    volumes:
+      - ../logs/apache:/var/log/modsec
+
+  nginx:
+    image: wphard-nginx:latest
+    build:
+      context: ../..
+      dockerfile: tests/integration/nginx/Dockerfile
+      args:
+        CRS_IMAGE: wphard-crs:latest
+    depends_on: [crs]
+    ports:
+      - "8002:80"
+    volumes:
+      - ../logs/nginx:/var/log/modsec

@@ -1,0 +1,162 @@
+---
+meta:
+  author: Thijs Eilander
+  description: "WAF evasion corpus: attacks that MUST still be blocked when
+    obfuscated (case, encoding, path-normalisation, header casing). A failure
+    here means a rule is bypassable. Directly guards the t:* transform chain
+    (incl. the AH00526 t:lowercase fix on the GeoIP rules)."
+  enabled: true
+  name: bypass-evasion.yaml
+# Corpus spans many rule IDs; assertions live in each test's
+# output.log_contains. This top-level rule_id is FTW reporting metadata only
+# (the plugin's allocated base id).
+rule_id: 9522000
+tests:
+  # ── xmlrpc.php (9522102) — t:lowercase,t:normalizePath,t:trim ────────────
+  - test_title: evasion-xmlrpc-uppercase
+    desc: Uppercased path must still be normalised and blocked.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: corpus, X-Forwarded-For: 8.8.8.8}
+            port: 80
+            method: GET
+            uri: /XMLRPC.PHP
+          output:
+            log_contains: id "9522102"
+  - test_title: evasion-xmlrpc-dot-segment
+    desc: Path with /./ and // must normalise and still be blocked.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: corpus, X-Forwarded-For: 8.8.8.8}
+            port: 80
+            method: GET
+            uri: /wp/.//../xmlrpc.php
+          output:
+            log_contains: id "9522102"
+  - test_title: evasion-xmlrpc-trailing
+    desc: Trailing slash + query must not defeat the match.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: corpus, X-Forwarded-For: 8.8.8.8}
+            port: 80
+            method: POST
+            uri: /xmlrpc.php/?rsd
+            data: "<methodCall></methodCall>"
+          output:
+            log_contains: id "9522102"
+
+  # ── user enumeration (9522104) ──────────────────────────────────────────
+  - test_title: evasion-userenum-uppercase-param
+    desc: ?AUTHOR=1 (uppercased arg name) must still be detected.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: corpus, X-Forwarded-For: 8.8.8.8}
+            port: 80
+            method: GET
+            uri: /?AUTHOR=1
+          output:
+            log_contains: id "9522104"
+  - test_title: evasion-userenum-extra-params
+    desc: author buried among other args must still be detected.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: corpus, X-Forwarded-For: 8.8.8.8}
+            port: 80
+            method: GET
+            uri: /?foo=bar&author=2&baz=1
+          output:
+            log_contains: id "9522104"
+
+  # ── wp-json root (9522207) ──────────────────────────────────────────────
+  - test_title: evasion-wpjson-uppercase
+    desc: /WP-JSON must normalise and still be blocked at the root.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: corpus, X-Forwarded-For: 8.8.8.8}
+            port: 80
+            method: GET
+            uri: /WP-JSON
+          output:
+            log_contains: id "9522207"
+  - test_title: evasion-wpjson-double-slash
+    desc: //wp-json must normalise and still be blocked at the root.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: corpus, X-Forwarded-For: 8.8.8.8}
+            port: 80
+            method: GET
+            uri: //wp-json
+          output:
+            log_contains: id "9522207"
+
+  # ── admin-login literal "admin" (9522109) ───────────────────────────────
+  - test_title: evasion-adminlogin-mixedcase
+    desc: log=Admin (mixed case) must still be detected.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: corpus
+              X-Forwarded-For: 8.8.8.8
+              Content-Type: application/x-www-form-urlencoded
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: "log=Admin&pwd=x&wp-submit=Log+In"
+          output:
+            log_contains: id "9522109"
+
+  # ── GeoIP country (9522510) — REGRESSION for the AH00526 t:lowercase fix ─
+  - test_title: evasion-geoip-lowercase-cf
+    desc: >
+      Lowercase CF-IPCountry must be normalised (t:lowercase) and still drive
+      the block. This is the exact bypass the t:uppercase bug would have
+      reopened.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: corpus
+              Content-Type: application/x-www-form-urlencoded
+              CF-IPCountry: cn
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: "log=alice&pwd=x&wp-submit=Log+In"
+          output:
+            log_contains: id "9522510"
+  - test_title: evasion-geoip-mixedcase-generic
+    desc: Mixed-case X-GeoIP-Country fallback must also drive the block.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: corpus
+              Content-Type: application/x-www-form-urlencoded
+              X-GeoIP-Country: Ru
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: "log=alice&pwd=x&wp-submit=Log+In"
+          output:
+            log_contains: id "9522510"

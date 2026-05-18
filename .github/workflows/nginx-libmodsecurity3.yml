@@ -1,0 +1,88 @@
+---
+# Angie (nginx fork) + libmodsecurity3 v3 — a faithful production mirror
+# (mail.myguard.nl runs eilandert/angie with angie-module-http-modsecurity +
+# libmodsecurity3 3.0.14, all from deb.myguard.nl). Builds the SHARED
+# CRS+plugin image and runs the go-ftw regression suite against it.
+# `angie -t` runs at image build time and fails the build on a bad rule.
+#
+# Security note: the only interpolation in a run: context is github.token;
+# no untrusted event input is used anywhere in this workflow.
+on: [push, pull_request]          # yamllint disable-line rule:truthy
+name: nginx + libmodsecurity3
+
+permissions:
+  contents: read
+
+env:
+  # renovate: datasource=github-releases depName=coreruleset/go-ftw
+  GO_FTW_VERSION: "v2.1.0"
+
+jobs:
+  nginx-libmodsecurity3:
+    name: nginx + libmodsecurity3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build shared CRS image
+        run: docker compose -f tests/integration/docker-compose.yml build crs
+
+      - name: Build Angie image (angie -t — rule parse gate)
+        run: docker compose -f tests/integration/docker-compose.yml build nginx
+
+      - name: Prepare log file
+        run: |
+          mkdir -p tests/logs/nginx
+          : > tests/logs/nginx/audit.log
+          chmod -R 777 tests/logs
+
+      - name: Start Angie
+        run: |
+          docker compose -f tests/integration/docker-compose.yml up -d nginx
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:8002/"; then
+              echo "angie up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "angie did not become ready"
+          docker compose -f tests/integration/docker-compose.yml logs nginx
+          exit 1
+
+      - name: Install go-ftw
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download -R coreruleset/go-ftw \
+            -p 'ftw_*_linux_amd64.tar.gz' -O - "${GO_FTW_VERSION}" \
+            | tar -xzf - ftw
+          chmod +x ftw
+
+      - name: Generate go-ftw config
+        run: |
+          {
+            echo '---'
+            echo 'logfile: tests/logs/nginx/audit.log'
+            echo 'testoverride:'
+            echo '  input:'
+            echo '    dest_addr: "127.0.0.1"'
+            echo '    port: 8002'
+          } > tests/integration/.ftw.yml
+
+      - name: Run plugin regression suite
+        run: |
+          ./ftw check -d tests/regression --config tests/integration/.ftw.yml
+          ./ftw run   -d tests/regression --config tests/integration/.ftw.yml \
+            --show-failures-only
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          echo "=== container logs ==="
+          docker compose -f tests/integration/docker-compose.yml logs nginx || true
+          echo "=== modsec audit log ==="
+          tail -n 200 tests/logs/nginx/audit.log || true
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f tests/integration/docker-compose.yml down -t 0 || true
