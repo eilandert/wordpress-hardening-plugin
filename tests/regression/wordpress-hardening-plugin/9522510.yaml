@@ -112,9 +112,11 @@ tests:
   - test_title: 9522510-6
     desc: >
       Regression: country codes from proxies may arrive lowercase. Phase-1
-      extraction must accept [A-Za-z]{2} and normalise with t:uppercase so a
-      lowercase CF-IPCountry still drives the block. Previously the strict
-      ^[A-Z]{2}$ extraction failed open on lowercase input.
+      extraction must accept [A-Za-z]{2} and normalise with t:lowercase so a
+      mixed/upper-case CF-IPCountry still drives the block. (t:uppercase is not
+      a valid ModSecurity transformation - it caused AH00526 on Apache
+      mod_security2 - so normalisation is to lowercase and block rule 9522510
+      matches ^[A-Za-z]{2}$.)
       Rule 9522510 must fire for "cn".
     stages:
       - stage:
