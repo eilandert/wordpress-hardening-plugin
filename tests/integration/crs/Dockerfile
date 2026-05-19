@@ -5,42 +5,57 @@
 # integration images derive their rule set from THIS single image, so both
 # engines parse byte-for-byte identical CRS + plugin files. A config-parse
 # regression (e.g. an invalid transformation like the AH00526 `t:uppercase`
-# bug) therefore fails the build on *both* engines, which is exactly the
-# guarantee the old nginx-only CI lacked.
+# bug) therefore fails the build on *both* engines.
 #
-# Layout produced:
+# CRS comes from the SAME apt repo as production (deb.myguard.nl), so the
+# test rule set matches what mail.myguard.nl actually runs.
+#
+# Layout produced (unchanged contract for the engine images):
 #   /opt/crs/crs-setup.conf            CRS tuning (from crs-setup.conf.example)
-#   /opt/crs/rules/*.conf              upstream CRS rules
-#   /opt/crs/plugins/*                 upstream plugin slots + THIS plugin
+#   /opt/crs/rules/*.conf              CRS rules (from the modsecurity-crs pkg)
+#   /opt/crs/plugins/*                 THIS plugin (config + before/after + data)
 #   /opt/crs/crs-main.conf             the include chain both engines load
 #   /opt/crs/modsecurity.conf          engine settings (DetectionOnly for FTW)
 # ---------------------------------------------------------------------------
 FROM debian:bookworm-slim
 
-# Pin the OWASP CRS version. Overridable: --build-arg CRS_VERSION=vX.Y.Z
-ARG CRS_VERSION=v4.7.0
+# Production ships modsecurity-crs from deb.myguard.nl. Pin the package
+# version; overridable via --build-arg if the repo moves forward.
+ARG CRS_DEB_VERSION=4.26.0+4.260519-3myguard0~bookworm
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+ && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
+ && install -d -m 0755 /etc/apt/keyrings \
+ && curl -fsSL https://deb.myguard.nl/deb.myguard.nl.gpg -o /tmp/mg.key \
+ && (gpg --dearmor < /tmp/mg.key > /etc/apt/keyrings/deb.myguard.nl.gpg 2>/dev/null \
+      || cp /tmp/mg.key /etc/apt/keyrings/deb.myguard.nl.gpg) \
+ && echo 'deb [signed-by=/etc/apt/keyrings/deb.myguard.nl.gpg] https://deb.myguard.nl bookworm main' \
+      > /etc/apt/sources.list.d/myguard.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+      "modsecurity-crs=${CRS_DEB_VERSION}" \
+ && rm -rf /var/lib/apt/lists/* /tmp/mg.key
 
-RUN git clone --depth 1 --branch "${CRS_VERSION}" \
-      https://github.com/coreruleset/coreruleset.git /opt/crs \
- && rm -rf /opt/crs/.git \
- && cp /opt/crs/crs-setup.conf.example /opt/crs/crs-setup.conf
+# Re-home the package tree into the /opt/crs layout the engine images expect.
+RUN mkdir -p /opt/crs/plugins \
+ && cp /etc/modsecurity/crs/crs-setup.conf.example /opt/crs/crs-setup.conf \
+ && cp -a /etc/modsecurity/crs/rules /opt/crs/rules
 
-# Drop in this plugin (config + before/after + .data files).
+# Drop in this plugin (config + before + .data files).
 COPY plugins/ /opt/crs/plugins/
 
-# Engine config: DetectionOnly so blocking rules still log (go-ftw asserts on
-# the audit log) without 403-ing the synthetic test traffic. Serial audit log
-# in the native (v2/v3 compatible) format that go-ftw parses.
-COPY tests/integration/crs/modsecurity.conf /opt/crs/modsecurity.conf
+# This plugin ships no *-after.conf. mod_security2 routes crs-main.conf
+# through Apache's config parser, which aborts on a zero-match Include glob
+# (even IncludeOptional, when the wildcard is the whole filename). A no-op
+# after file keeps the canonical config/before/after chain matching on every
+# parser. CI-only — the published plugin is untouched.
+RUN printf '%s\n' \
+      '# CI no-op: keeps the *-after.conf glob non-empty for strict parsers.' \
+      > /opt/crs/plugins/zzz-ci-noop-after.conf
 
-# The include chain. Order matters: CRS setup -> plugin phase config ->
-# plugin "before" rules -> CRS rules -> plugin "after" rules. The two CI
-# SecActions enable the GeoIP + IP-reputation features (disabled by default)
-# so their rules are actually exercised, mirroring the prior integration.yml.
+# Engine config + the include chain (DetectionOnly, serial audit log, the
+# go-ftw log marker, GeoIP/IP-rep enabled — see the files themselves).
+COPY tests/integration/crs/modsecurity.conf /opt/crs/modsecurity.conf
 COPY tests/integration/crs/crs-main.conf /opt/crs/crs-main.conf
 
 # Sanity: every file the chain references must exist.

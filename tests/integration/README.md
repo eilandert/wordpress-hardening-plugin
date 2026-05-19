@@ -61,8 +61,10 @@ Cross-engine on purpose: a bypass that only works on one engine still fails.
 
 ## Files
 
-- `crs/Dockerfile` — clones OWASP CRS (`CRS_VERSION`, default `v4.7.0`),
-  drops in `plugins/`, lays down the include chain.
+- `crs/Dockerfile` — installs the production CRS (`modsecurity-crs` from
+  deb.myguard.nl, `CRS_DEB_VERSION`, default 4.26.0), re-homes it into
+  `/opt/crs`, drops in `plugins/` + a CI no-op `*-after.conf`, lays down the
+  include chain. Same CRS the live server runs.
 - `crs/crs-main.conf` — the include order both engines load; also flips on
   the GeoIP + IP-reputation features so those rules are exercised.
 - `crs/modsecurity.conf` — `SecRuleEngine DetectionOnly`, serial audit log.
