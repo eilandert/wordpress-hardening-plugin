@@ -146,7 +146,7 @@ Blocks access to `wp-login.php` for clients from countries not in the allowed li
 **How it works:**
 - Upstream proxy (Cloudflare, nginx + ngx_http_geoip2_module, HAProxy, etc.) sets `CF-IPCountry` or `X-GeoIP-Country` with the client's 2-letter ISO 3166-1 country code
 - Requests without a recognized country header are **allowed through** (fail-open)
-- Loopback and RFC 1918 addresses are always whitelisted
+- Loopback and private ranges (IPv4 RFC 1918 + IPv6 `::1` and ULA `fc00::/7`) are always whitelisted
 - Allowed countries are listed one per line in `plugins/wordpress-hardening-login-countries.data`
 
 **Default settings:**
