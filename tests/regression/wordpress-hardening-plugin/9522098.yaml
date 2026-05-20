@@ -1,0 +1,30 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin kill-switch default-enable sanity
+  enabled: true
+  name: 9522098.yaml
+tests:
+  - test_title: 9522098-1
+    desc: >
+      Regression for the production-disabling kill-switch bug: rule 9522099
+      checks TX:wordpress-hardening-plugin_enabled "@eq 0", which evaluates
+      true against an unset variable in ModSecurity. Without a default-setter,
+      9522099 fired on every request and ctl:ruleRemoveById stripped the entire
+      9522000-9522999 range — the whole plugin was silently disabled.
+      Rule 9522098 now sets the flag to 1 when unset, so a follow-on blocking
+      rule (we use 9522102 / xmlrpc) actually fires by default. The presence
+      of id "9522102" in the log proves the plugin is enabled out of the box.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              X-Forwarded-For: 8.8.8.8
+            port: 80
+            method: GET
+            uri: /xmlrpc.php
+          output:
+            log_contains: id "9522102"
