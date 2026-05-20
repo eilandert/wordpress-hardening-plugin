@@ -3,8 +3,14 @@
 # Enable the feature with: setvar:tx.wphard.geoip_login_enabled=1
 # See plugins/wordpress-hardening-config.conf for configuration details.
 #
-# Example allowed countries:
-# NL
-# DE
-# GB
-# US
+# IMPORTANT: entries MUST be lowercase. Rules 9522500/9522501 apply
+# t:lowercase to the country header before storing it in TX, and the
+# allow-list lookup (9522508) uses @pmFromFile which is case-sensitive.
+# Adding "NL" (uppercase) here means NO country will ever be allow-listed
+# and every login attempt from a non-whitelisted IP will be blocked.
+#
+# Example allowed countries (lowercase, one per line):
+# nl
+# de
+# gb
+# us
