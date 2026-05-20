@@ -1,0 +1,14 @@
+# Trusted upstream proxies (CIDR notation, one per line).
+# Used by rule 9522064 (@ipMatchFromFile) to decide whether to honour
+# X-Forwarded-For. Only takes effect when tx.wphard.trusted_proxies_enabled=1.
+#
+# Populate with the real public-facing IPs of your CDN / load balancer / proxy:
+#
+# Cloudflare:        https://www.cloudflare.com/ips-v4 / https://www.cloudflare.com/ips-v6
+# AWS CloudFront:    https://d7uri8nf7uskq.cloudfront.net/tools/list-cloudfront-ips
+# Google Cloud LB:   https://www.gstatic.com/ipranges/cloud.json
+#
+# Example (uncomment + replace with your values):
+# 173.245.48.0/20
+# 103.21.244.0/22
+# 2400:cb00::/32

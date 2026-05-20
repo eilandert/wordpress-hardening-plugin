@@ -5,13 +5,21 @@ For official CRS plugin installation instructions, see https://coreruleset.org/d
 File Path Configuration
 =====================
 
-This plugin uses @pmFromFile for efficient pattern matching. The `wordpress-hardening-files.data` file must be:
+This plugin uses @pmFromFile / @ipMatchFromFile for efficient pattern matching.
+The following .data files must all be deployed alongside the .conf files (or
+referenced with an absolute path):
 
-1. Placed in the same directory as `wordpress-hardening-before.conf`, OR
-2. Placed in ModSecurity's configured rules directory, OR
-3. Referenced with an absolute path in the rules file
+  - wordpress-hardening-files.data            (direct-access block list)
+  - wordpress-hardening-scanners.data         (scanner UA block list, PL2)
+  - wordpress-hardening-login-countries.data  (GeoIP allow list — LOWERCASE)
+  - wordpress-hardening-ip-reputation.data    (IP reputation block list)
+  - wordpress-hardening-trusted-proxies.data  (XFF trusted-proxy CIDRs)
 
-If loading rules from a different path, ensure the .data file is accessible or update the @pmFromFile reference:
-  @pmFromFile /full/path/to/wordpress-hardening-files.data
+The files must be in one of:
+
+1. The same directory as `wordpress-hardening-before.conf`, OR
+2. ModSecurity's configured rules directory, OR
+3. Referenced with an absolute path in the rules file:
+     @pmFromFile /full/path/to/wordpress-hardening-files.data
 
 See [README](README.md) for complete installation documentation.
