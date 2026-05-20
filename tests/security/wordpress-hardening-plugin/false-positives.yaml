@@ -39,7 +39,12 @@ tests:
             no_log_contains: id "9522
 
   - test_title: fp-admin-ajax
-    desc: Standard wp-admin/admin-ajax.php POST (heartbeat etc.) is legit.
+    desc: >
+      Standard wp-admin/admin-ajax.php POST (heartbeat etc.) is legit.
+      Regression for the chain-setvar bug in 9522200: the parent's setvar
+      previously fired unconditionally on any ".php$" match, scoring +5 even
+      when the chained allow-list check passed. Assert no anomaly score is
+      contributed (per_pl=0-0-0-0) in addition to no 9522 rule log line.
     stages:
       - stage:
           input:
@@ -54,9 +59,13 @@ tests:
             data: "action=heartbeat&_nonce=abc123&data=1"
           output:
             no_log_contains: id "9522
+            no_log_contains: "per_pl=[1-9]"
 
   - test_title: fp-wpcron-internal
-    desc: wp-cron.php from the loopback (internal WP self-call) is legit.
+    desc: >
+      wp-cron.php from the loopback (internal WP self-call) is legit.
+      Regression for the chain-setvar bug in 9522200: assert no anomaly
+      score is contributed in addition to no 9522 rule log line.
     stages:
       - stage:
           input:
@@ -70,6 +79,45 @@ tests:
             uri: /wp-cron.php?doing_wp_cron=1779142579.0
           output:
             no_log_contains: id "9522
+            no_log_contains: "per_pl=[1-9]"
+
+  - test_title: fp-wp-login-plain
+    desc: >
+      Plain GET of /wp-login.php is legit. Regression for the chain-setvar
+      bug in 9522315: the parent's setvar previously fired on any URI
+      beginning with "/wp-login.php", scoring +5 even when no injection was
+      present in ARGS:log/pwd. Assert no anomaly score and no rule log line.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: Mozilla/5.0}
+            port: 80
+            method: GET
+            uri: /wp-login.php
+          output:
+            no_log_contains: id "9522
+            no_log_contains: "per_pl=[1-9]"
+
+  - test_title: fp-wp-login-normal-post
+    desc: >
+      Normal wp-login.php POST (no injection) is legit. Regression for
+      9522315 chain-setvar bug — assert no anomaly score contribution.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+              Content-Type: application/x-www-form-urlencoded
+            port: 80
+            method: POST
+            uri: /wp-login.php
+            data: "log=normaluser&pwd=correcthorsebatterystaple&wp-submit=Log+In"
+          output:
+            no_log_contains: id "9522
+            no_log_contains: "per_pl=[1-9]"
 
   - test_title: fp-wpjson-subpath-read
     desc: >
