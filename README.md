@@ -86,6 +86,16 @@ The plugin includes IP-based rate limiting for `wp-login.php` to prevent brute f
 - Whitelist prevents rate limiting for trusted IPs (loopback + private ranges, IPv4 and IPv6)
 - Blocks return **HTTP 429 Too Many Requests** (RFC 6585 §4) and export `wphard_retry_after` as an env var so the webserver can add a `Retry-After` header to the response
 
+> **⚠️ Engine support:** rate limiting relies on persistent collections
+> (`initcol:ip=...` + `IP:` variables). This works reliably on **Apache +
+> mod_security2 (v2.x)**. **libmodsecurity3 (the engine used by nginx /
+> Angie)** has long-standing gaps in its persistent-collection
+> implementation — the counter often never persists across requests and
+> the rate-limit never triggers, even when the rule itself parses and
+> loads correctly. If you're on libmodsec3, prefer your webserver's
+> native rate-limiter (e.g. nginx/Angie's `limit_req zone=...`) for
+> `/wp-login.php` and treat this plugin's rate-limiter as Apache-only.
+
 **Default settings:**
 - **Enabled by default** (`ratelimit_login_enabled`)
 - **5 login attempts** per IP (`ratelimit_login_attempts`)
