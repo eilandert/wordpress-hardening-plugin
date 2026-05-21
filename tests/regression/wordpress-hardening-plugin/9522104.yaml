@@ -57,7 +57,7 @@ tests:
           output:
             log_contains: id "9522104"
   - test_title: 9522104-4
-    desc: Test if user enumeration is blocked
+    desc: Test if a numeric user-ID lookup is blocked (/wp/v2/users/<n>)
     stages:
       - stage:
           input:
@@ -68,7 +68,7 @@ tests:
               Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
             port: 80
             method: GET
-            uri: /wp-json/wp/v2/USERS=99999999999999999999999
+            uri: /wp-json/wp/v2/users/42
             data: |
               text
           output:
@@ -184,3 +184,32 @@ tests:
             uri: /?author=42
           output:
             log_contains: id "9522104"
+  - test_title: 9522104-12
+    desc: >
+      Regression: /wp-json/wp/v2/users/me returns ONLY the authenticated
+      user, not a collection. It's used by the WP block editor and the
+      admin UI on every page load. It must not be flagged as enumeration.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-json/wp/v2/users/me
+          output:
+            no_log_contains: id "9522104"
+  - test_title: 9522104-13
+    desc: >
+      Regression: /users/me with the editor's typical context+locale query
+      args (the exact request the block editor issues) must also pass.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-json/wp/v2/users/me?context=edit&_locale=user
+          output:
+            no_log_contains: id "9522104"
