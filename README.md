@@ -35,7 +35,7 @@ What this plugin does so far:
 - Automatic IP reputation blocklist blocking all requests from listed IPs/CIDRs (configurable, default: disabled) (PL1)
 - Trusted-proxy pinning for X-Forwarded-For (configurable, default: disabled — backward compatible) (PL1)
 - IPv6-aware client-IP resolution and private-network whitelisting (loopback + RFC 1918 + IPv6 `::1` + ULA `fc00::/7`)
-- Strip version-disclosure response headers — X-Pingback, X-Powered-By, REST Link rel=api.w.org (configurable, default: block) (PL1)
+- Detect version-disclosure response headers — X-Pingback, X-Powered-By, REST Link rel=api.w.org. Real stripping must be at the proxy: `proxy_hide_header X-Pingback; proxy_hide_header X-Powered-By; more_clear_headers "Link";` (configurable, default: tag) (PL1)
 - Hard-block info-leak paths in phase:1 — readme.html, license.txt, .user.ini, wp-admin/install.php, wp-admin/setup-config.php, wp-includes/wlwmanifest.xml, wp-content/debug.log (configurable, default: block) (PL1)
 - Block CVE-2018-6389 DoS — long `?load=` on wp-admin/load-scripts.php and load-styles.php (configurable, default: block) (PL1)
 - Block VCS / dotfile probes — .env, .git/, .svn/, .hg/, .bzr/, .htpasswd, .DS_Store (configurable, default: block) (PL1)
@@ -45,7 +45,7 @@ What this plugin does so far:
 - Block known-CVE plugin signatures — SureTriggers/OttoKit (CVE-2025-3102, CVE-2025-27007), Bricks Builder (CVE-2024-25600) (configurable, default: block) (PL1)
 - Block uncommon HTTP methods on /wp-admin/, /wp-login.php, /xmlrpc.php, /wp-cron.php — TRACE/TRACK/DEBUG/PROPFIND/MKCOL/COPY/MOVE/LOCK/UNLOCK/PUT/DELETE/PATCH (configurable, default: block) (PL1)
 - Block legacy CVE scanner probes — revslider, timthumb, WP Symposium, MailPoet wysija_captcha, wp-file-manager, Duplicator installer (configurable, default: block) (PL1)
-- BREACH/CRIME compression side-channel mitigation — strip Accept-Encoding on /wp-admin/, /wp-login.php, /wp-json/* so secret-bearing responses serve uncompressed (configurable, default: block) (PL1)
+- BREACH/CRIME compression side-channel detection — tag requests to /wp-admin/, /wp-login.php, /wp-json/* (configurable, default: tag). Real stripping must be configured at the proxy: `proxy_set_header Accept-Encoding "";` + `gzip off;` + `brotli off;` on those locations. (PL1)
 - Block public /author/<slug>/ archive pages (configurable, default: non-block — most blogs expose these) (PL2)
 
 ## IP Whitelisting
