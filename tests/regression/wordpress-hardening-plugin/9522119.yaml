@@ -1,0 +1,67 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522119.yaml
+tests:
+  - test_title: 9522119-1
+    desc: TRACE method on /wp-login.php is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: TRACE
+            uri: /wp-login.php
+          output:
+            log_contains: id "9522119"
+  - test_title: 9522119-2
+    desc: PROPFIND method on /wp-admin/ is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: PROPFIND
+            uri: /wp-admin/
+          output:
+            log_contains: id "9522119"
+  - test_title: 9522119-3
+    desc: PUT method on /xmlrpc.php is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: PUT
+            uri: /xmlrpc.php
+          output:
+            log_contains: id "9522119"
+  - test_title: 9522119-4
+    desc: Negative — GET on /wp-login.php is allowed
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-login.php
+          output:
+            no_log_contains: id "9522119"
+  - test_title: 9522119-5
+    desc: Negative — TRACE on a public page is NOT blocked by this rule
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: TRACE
+            uri: /about
+          output:
+            no_log_contains: id "9522119"

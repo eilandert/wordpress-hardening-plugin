@@ -1,0 +1,22 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522122.yaml
+tests:
+  - test_title: 9522122-1
+    desc: >
+      block_author_archives is OFF by default — /author/john-doe must NOT
+      trigger 9522122 with default configuration. Most blogs want author
+      archives publicly reachable.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /author/john-doe/
+          output:
+            no_log_contains: id "9522122"

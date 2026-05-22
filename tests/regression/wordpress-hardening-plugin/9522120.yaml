@@ -1,0 +1,55 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522120.yaml
+tests:
+  - test_title: 9522120-1
+    desc: revslider_show_image legacy probe is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-admin/admin-ajax.php?action=revslider_show_image&img=../wp-config.php
+          output:
+            log_contains: id "9522120"
+  - test_title: 9522120-2
+    desc: timthumb.php legacy probe is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-content/themes/sometheme/scripts/timthumb.php
+          output:
+            log_contains: id "9522120"
+  - test_title: 9522120-3
+    desc: wp-file-manager connector.minimal.php legacy probe is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-content/plugins/wp-file-manager/lib/php/connector.minimal.php
+          output:
+            log_contains: id "9522120"
+  - test_title: 9522120-4
+    desc: Duplicator installer-backup.php legacy probe is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /installer-backup.php
+          output:
+            log_contains: id "9522120"

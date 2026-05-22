@@ -1,0 +1,21 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522115.yaml
+tests:
+  - test_title: 9522115-1
+    desc: >
+      block_plugin_readme is OFF by default, so plugin readme.txt access must
+      NOT trigger 9522115 with the default config.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-content/plugins/akismet/readme.txt
+          output:
+            no_log_contains: id "9522115"

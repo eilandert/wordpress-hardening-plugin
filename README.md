@@ -29,12 +29,24 @@ What this plugin does so far:
 - Block known security scanner user agents like nikto, sqlmap, wpscan (configurable, default: non-block) (PL2)
 - Block XDebug and phpinfo debug probe parameters (configurable, default: block) (PL1)
 - Block code injection patterns in wp-login.php POST parameters (configurable, default: block) (PL1)
-- Block dangerous wp-admin endpoints like install.php and setup-config.php (configurable, default: non-block) (PL2)
+- Block dangerous wp-admin endpoints — upgrade.php, wp-activate.php (configurable, default: block) (PL2)
 - IP-based rate limiting for wp-login.php (configurable, default: 5 attempts per 60 seconds, replies with HTTP 429 per RFC 6585) (PL1)
 - GeoIP-based access control for wp-login.php (configurable, default: disabled) (PL1)
 - Automatic IP reputation blocklist blocking all requests from listed IPs/CIDRs (configurable, default: disabled) (PL1)
 - Trusted-proxy pinning for X-Forwarded-For (configurable, default: disabled — backward compatible) (PL1)
 - IPv6-aware client-IP resolution and private-network whitelisting (loopback + RFC 1918 + IPv6 `::1` + ULA `fc00::/7`)
+- Strip version-disclosure response headers — X-Pingback, X-Powered-By, REST Link rel=api.w.org (configurable, default: block) (PL1)
+- Hard-block info-leak paths in phase:1 — readme.html, license.txt, .user.ini, wp-admin/install.php, wp-admin/setup-config.php, wp-includes/wlwmanifest.xml, wp-content/debug.log (configurable, default: block) (PL1)
+- Block CVE-2018-6389 DoS — long `?load=` on wp-admin/load-scripts.php and load-styles.php (configurable, default: block) (PL1)
+- Block VCS / dotfile probes — .env, .git/, .svn/, .hg/, .bzr/, .htpasswd, .DS_Store (configurable, default: block) (PL1)
+- Block wp-config backup variants — .save, .old, .new, .dist, .sample, .copy, ~, numeric .1/.2 (configurable, default: block) (PL1)
+- Block plugin/theme readme.txt version-disclosure probes (configurable, default: non-block — wp-cli reads these) (PL2)
+- Block PHP stream wrappers in args — php://, data://, expect://, file://, phar://, glob://, zip://, compress.zlib://, compress.bzip2:// (configurable, default: block) (PL1)
+- Block known-CVE plugin signatures — SureTriggers/OttoKit (CVE-2025-3102, CVE-2025-27007), Bricks Builder (CVE-2024-25600) (configurable, default: block) (PL1)
+- Block uncommon HTTP methods on /wp-admin/, /wp-login.php, /xmlrpc.php, /wp-cron.php — TRACE/TRACK/DEBUG/PROPFIND/MKCOL/COPY/MOVE/LOCK/UNLOCK/PUT/DELETE/PATCH (configurable, default: block) (PL1)
+- Block legacy CVE scanner probes — revslider, timthumb, WP Symposium, MailPoet wysija_captcha, wp-file-manager, Duplicator installer (configurable, default: block) (PL1)
+- BREACH/CRIME compression side-channel mitigation — strip Accept-Encoding on /wp-admin/, /wp-login.php, /wp-json/* so secret-bearing responses serve uncompressed (configurable, default: block) (PL1)
+- Block public /author/<slug>/ archive pages (configurable, default: non-block — most blogs expose these) (PL2)
 
 ## IP Whitelisting
 
@@ -107,7 +119,7 @@ The plugin includes IP-based rate limiting for `wp-login.php` to prevent brute f
 Uncomment these in `plugins/wordpress-hardening-config.conf` to override defaults:
 
 ```bash
-# Reduce to 3 attempts
+# Reduce to 3 attempts (window remains 60s)
 #SecAction "id:9522049,phase:1,nolog,pass,t:none,setvar:tx.wphard.ratelimit_login_attempts=3"
 
 # Change the window (allowed values: 30, 60, 120, 300, 600 — any other value
@@ -157,7 +169,7 @@ Blocks access to `wp-login.php` for clients from countries not in the allowed li
 **To enable:**
 1. Uncomment the SecAction in `plugins/wordpress-hardening-config.conf`:
    ```bash
-   SecAction "id:9522052,phase:1,nolog,pass,t:none,setvar:'tx.wphard.geoip_login_enabled=1'"
+   SecAction "id:9522902,phase:1,nolog,pass,t:none,setvar:'tx.wphard.geoip_login_enabled=1'"
    ```
 2. Populate `plugins/wordpress-hardening-login-countries.data` with the ISO codes of countries you want to allow (**lowercase, one per line**):
    ```
@@ -187,7 +199,7 @@ Blocks **all requests** (not just login attempts) from IP addresses listed in `p
 **To enable:**
 1. Uncomment the SecAction in `plugins/wordpress-hardening-config.conf`:
    ```bash
-   SecAction "id:9522053,phase:1,nolog,pass,t:none,setvar:'tx.wphard.ip_reputation_enabled=1'"
+   SecAction "id:9522903,phase:1,nolog,pass,t:none,setvar:'tx.wphard.ip_reputation_enabled=1'"
    ```
 2. Populate `plugins/wordpress-hardening-ip-reputation.data` with known bad IPs and CIDRs (one per line):
    ```
@@ -208,7 +220,8 @@ The plugin uses the allocated range **9522000-9522999**. Major buckets:
 | Range | Purpose |
 |---|---|
 | `9522010`-`9522055` | Config-knob `SecAction`s (commented examples in `config.conf`) |
-| `9522012`-`9522050` | Default-value setters (in `before.conf`) |
+| `9522012`-`9522050` | Default-value setters (in `before.conf`, IPv6/proxy series) |
+| `9522071`-`9522081` | Default-value setters (in `before.conf`, audit-round-4 protections) |
 | `9522060`-`9522065` | Client-IP resolver (`REMOTE_ADDR`, XFF v4/v6, trusted-proxy gate, `client_is_private`) |
 | `9522099` | Plugin kill-switch (removes 9522000-9522998) |
 | `9522101`-`9522111` | xmlrpc / user-enumeration / REST API / admin-login / wp-cron blocks |

@@ -1,0 +1,103 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522100.yaml
+tests:
+  - test_title: 9522100-1
+    desc: readme.html probe is blocked in phase:1
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /readme.html
+          output:
+            log_contains: id "9522100"
+  - test_title: 9522100-2
+    desc: license.txt probe is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /license.txt
+          output:
+            log_contains: id "9522100"
+  - test_title: 9522100-3
+    desc: .user.ini probe is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /.user.ini
+          output:
+            log_contains: id "9522100"
+  - test_title: 9522100-4
+    desc: wp-admin/install.php probe is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-admin/install.php
+          output:
+            log_contains: id "9522100"
+  - test_title: 9522100-5
+    desc: wp-admin/setup-config.php probe is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-admin/setup-config.php
+          output:
+            log_contains: id "9522100"
+  - test_title: 9522100-6
+    desc: wp-includes/wlwmanifest.xml probe is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-includes/wlwmanifest.xml
+          output:
+            log_contains: id "9522100"
+  - test_title: 9522100-7
+    desc: wp-content/debug.log probe is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-content/debug.log
+          output:
+            log_contains: id "9522100"
+  - test_title: 9522100-8
+    desc: Negative — legitimate post URL containing 'license' must not match
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /blog/software-license-explained
+          output:
+            no_log_contains: id "9522100"
