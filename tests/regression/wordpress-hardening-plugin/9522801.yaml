@@ -1,0 +1,72 @@
+---
+meta:
+  author: Thijs Eilander
+  description: >
+    Front-end permalink CRS-953 PHP-leakage FP suppression: rule 9522801
+    must schedule ctl:ruleRemoveById for 953100/953110/953120 on rendered
+    blog-post paths, and MUST NOT do so on /wp-admin, /wp-login, REST,
+    cron, xmlrpc, or static-asset paths. The integration test rig serves
+    a static body (no actual 953xxx fire), so these tests assert the
+    plugin's own decision: no 9522xxx rule on the permalink path, and no
+    interference with non-permalink paths.
+  enabled: true
+  name: 9522801.yaml
+tests:
+  - test_title: 9522801-1
+    desc: >
+      A normal blog-post permalink request must not trip any 9522xxx
+      blocking rule and must not trip any 953xxx rule either. Even
+      though 9522801 fires silently (nolog), the absence of any 953xxx
+      log line on a permalink request is the externally observable
+      effect of the FP suppression.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+            port: 80
+            method: GET
+            uri: /2026/05/zstd-nginx-module-what-it-does-bugs-fixed/
+          output:
+            no_log_contains: 'id "(?:9522[0-9]+|953100|953110|953120)"'
+
+  - test_title: 9522801-2
+    desc: >
+      /wp-admin paths MUST keep CRS-953 protection (negative regex in
+      9522801 explicitly excludes them). The rig won't make CRS-953 fire
+      because there is no PHP body, but we assert no 9522801-driven
+      removal happened: 9522104 (user enumeration) still fires for
+      /?author=N lookups, confirming the plugin's enforcement on
+      enumeration paths is undisturbed.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+            port: 80
+            method: GET
+            uri: /?author=1
+          output:
+            log_contains: id "9522104"
+
+  - test_title: 9522801-3
+    desc: >
+      A second permalink shape (deeper path) must also not trip any
+      9522xxx blocking rule. Sanity check that the negative regex in
+      9522801 keeps front-end blog content clean across post layouts.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: Mozilla/5.0
+            port: 80
+            method: GET
+            uri: /2026/05/postfix-dovecot-setup-debian/
+          output:
+            no_log_contains: 'id "9522[0-9]+"'

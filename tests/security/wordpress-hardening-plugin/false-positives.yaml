@@ -182,3 +182,28 @@ tests:
             data: "log=alice&pwd=correcthorsebatterystaple&wp-submit=Log+In"
           output:
             no_log_contains: id "9522
+
+  - test_title: fp-tutorial-permalink-php-keywords
+    desc: >
+      Production FP audited 2026-05-22 on deb.myguard.nl: CRS rules
+      953100/953110/953120 (RESPONSE-953-DATA-LEAKAGES-PHP) fired on
+      tutorial-post HTML containing PHP function names and `<?php` snippets,
+      accumulating outbound anomaly score until 959100 returned 302/403 and
+      hid the article from readers. Rule 9522801 removes those three CRS
+      rules on front-end permalinks (any path that is NOT admin/login/REST/
+      cron/xmlrpc/wp-content/wp-includes). This test asserts that a permalink
+      GET produces no plugin rule fire and that 953100/953110/953120 are not
+      logged either.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: Mozilla/5.0}
+            port: 80
+            method: GET
+            uri: /2026/05/nginx-angie-the-expert-guide-to-maximum-performance-and-security/
+          output:
+            no_log_contains: id "9522
+            no_log_contains: id "953100"
+            no_log_contains: id "953110"
+            no_log_contains: id "953120"
