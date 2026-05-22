@@ -30,10 +30,7 @@ tests:
             method: GET
             uri: /2026/05/zstd-nginx-module-what-it-does-bugs-fixed/
           output:
-            no_log_contains: id "9522[0-9]+"
-            no_log_contains: id "953100"
-            no_log_contains: id "953110"
-            no_log_contains: id "953120"
+            no_log_contains: 'id "(?:9522[0-9]+|953100|953110|953120)"'
 
   - test_title: 9522801-2
     desc: >
@@ -41,8 +38,8 @@ tests:
       9522801 explicitly excludes them). The rig won't make CRS-953 fire
       because there is no PHP body, but we assert no 9522801-driven
       removal happened: 9522104 (user enumeration) still fires for
-      /wp-admin user lookups, confirming the plugin's enforcement on
-      admin paths is undisturbed.
+      /?author=N lookups, confirming the plugin's enforcement on
+      enumeration paths is undisturbed.
     stages:
       - stage:
           input:
@@ -58,13 +55,9 @@ tests:
 
   - test_title: 9522801-3
     desc: >
-      Operator-disabled mode: when
-      tx.wphard.exclude_response_php_leakage_on_permalinks=0 is set in
-      the operator's config, rule 9522800 short-circuits past
-      9522801 — confirmed indirectly here by requesting a permalink
-      while sending a header that exercises an unrelated permalink-safe
-      path. The plugin must not fire any 9522xxx rule on a vanilla
-      blog-post GET regardless of the tunable's value.
+      A second permalink shape (deeper path) must also not trip any
+      9522xxx blocking rule. Sanity check that the negative regex in
+      9522801 keeps front-end blog content clean across post layouts.
     stages:
       - stage:
           input:
@@ -76,4 +69,4 @@ tests:
             method: GET
             uri: /2026/05/postfix-dovecot-setup-debian/
           output:
-            no_log_contains: id "9522[12356789][0-9][0-9]"
+            no_log_contains: 'id "9522[0-9]+"'
