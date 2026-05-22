@@ -1,0 +1,71 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522116.yaml
+tests:
+  - test_title: 9522116-1
+    desc: php://input wrapper in query arg is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /?file=php://input
+          output:
+            log_contains: id "9522116"
+  - test_title: 9522116-2
+    desc: data:// wrapper in query arg is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /?ref=data://text/plain;base64,PD9waHAgcGhwaW5mbygpOyA/Pg==
+          output:
+            log_contains: id "9522116"
+  - test_title: 9522116-3
+    desc: phar:// wrapper in query arg is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /?x=phar:///tmp/evil.phar/payload
+          output:
+            log_contains: id "9522116"
+  - test_title: 9522116-4
+    desc: >
+      Negative — a referrer arg containing an https:// URL must NOT match.
+      The boundary anchor prevents matching 'php://' inside 'https://'.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /?ref=https://example.com/page
+          output:
+            no_log_contains: id "9522116"
+  - test_title: 9522116-5
+    desc: >
+      Negative — a query arg literally named 'phpfile' must NOT match,
+      since ARGS_NAMES is no longer in the target list.
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /?phpfile=index
+          output:
+            no_log_contains: id "9522116"

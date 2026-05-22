@@ -26,15 +26,27 @@ What this plugin does so far:
 - Block compressed database dump access (.sql.gz/.sql.bz2/.sql.zip) (configurable, default: block) (PL1)
 - Block directory traversal attempts in /wp-content/uploads/ (configurable, default: block) (PL1)
 - Block null byte injection in URIs and parameters (configurable, default: block) (PL2)
-- Block known security scanner user agents like nikto, sqlmap, wpscan (configurable, default: non-block) (PL2)
+- Block known security scanner user agents like nikto, sqlmap, wpscan (configurable, default: non-block) (PL2). **SEO note:** the bundled UA list also includes third-party SEO crawlers (Ahrefs, Semrush, Majestic/MJ12, Moz/dotbot/rogerbot, Petal, etc.). Enabling this toggle hides your site from those services. Search-engine bots (Googlebot, Bingbot) and social previews (Twitterbot, LinkedInBot, facebookexternalhit/1.1) are NOT in the list and continue to work.
 - Block XDebug and phpinfo debug probe parameters (configurable, default: block) (PL1)
 - Block code injection patterns in wp-login.php POST parameters (configurable, default: block) (PL1)
-- Block dangerous wp-admin endpoints like install.php and setup-config.php (configurable, default: non-block) (PL2)
+- Block dangerous wp-admin endpoints — upgrade.php, wp-activate.php (configurable, default: block) (PL2)
 - IP-based rate limiting for wp-login.php (configurable, default: 5 attempts per 60 seconds, replies with HTTP 429 per RFC 6585) (PL1)
 - GeoIP-based access control for wp-login.php (configurable, default: disabled) (PL1)
 - Automatic IP reputation blocklist blocking all requests from listed IPs/CIDRs (configurable, default: disabled) (PL1)
 - Trusted-proxy pinning for X-Forwarded-For (configurable, default: disabled — backward compatible) (PL1)
 - IPv6-aware client-IP resolution and private-network whitelisting (loopback + RFC 1918 + IPv6 `::1` + ULA `fc00::/7`)
+- Detect version-disclosure response headers — X-Pingback, X-Powered-By, REST Link rel=api.w.org. Real stripping must be at the proxy: `proxy_hide_header X-Pingback; proxy_hide_header X-Powered-By; more_clear_headers "Link";` (configurable, default: tag) (PL1)
+- Hard-block info-leak paths in phase:1 — readme.html, license.txt, .user.ini, wp-admin/install.php, wp-admin/setup-config.php, wp-includes/wlwmanifest.xml, wp-content/debug.log (configurable, default: block) (PL1)
+- Block CVE-2018-6389 DoS — long `?load=` on wp-admin/load-scripts.php and load-styles.php (configurable, default: block) (PL1)
+- Block VCS / dotfile probes — .env, .git/, .svn/, .hg/, .bzr/, .htpasswd, .DS_Store (configurable, default: block) (PL1)
+- Block wp-config backup variants — .save, .old, .new, .dist, .sample, .copy, ~, numeric .1/.2 (configurable, default: block) (PL1)
+- Block plugin/theme readme.txt version-disclosure probes (configurable, default: non-block — wp-cli reads these) (PL2)
+- Block PHP stream wrappers in args — php://, data://, expect://, file://, phar://, glob://, zip://, compress.zlib://, compress.bzip2:// (configurable, default: block) (PL1)
+- Block known-CVE plugin signatures — SureTriggers/OttoKit (CVE-2025-3102, CVE-2025-27007), Bricks Builder (CVE-2024-25600) (configurable, default: block) (PL1)
+- Block uncommon HTTP methods on /wp-admin/, /wp-login.php, /xmlrpc.php, /wp-cron.php — TRACE/TRACK/DEBUG/PROPFIND/MKCOL/COPY/MOVE/LOCK/UNLOCK/PUT/DELETE/PATCH (configurable, default: block) (PL1)
+- Block legacy CVE scanner probes — revslider, timthumb, WP Symposium, MailPoet wysija_captcha, wp-file-manager, Duplicator installer (configurable, default: block) (PL1)
+- BREACH/CRIME compression side-channel detection — tag requests to /wp-admin/, /wp-login.php, /wp-json/* (configurable, default: tag). Real stripping must be configured at the proxy: `proxy_set_header Accept-Encoding "";` + `gzip off;` + `brotli off;` on those locations. (PL1)
+- Block public /author/<slug>/ archive pages (configurable, default: non-block — most blogs expose these) (PL2)
 
 ## IP Whitelisting
 
@@ -69,6 +81,8 @@ To eliminate that footgun:
    ```
 
 When enabled, `X-Forwarded-For` is honoured **only** if `REMOTE_ADDR` is in that list; otherwise the resolver falls back to `REMOTE_ADDR`.
+
+> **Scope:** the private-IP whitelist only applies to the xmlrpc / wp-json / wp-cron rules (`9522102`, `9522107`, `9522111`, `9522207`). The user-enumeration rule (`9522104`), the direct-PHP-access rule (`9522200`), sensitive-files (`9522202`/`9522206`), info-leak (`9522100`), VCS-dotfile (`9522113`), and the audit-round-4 protections (`9522112`-`9522122`, `9522701`-`9522703`) apply to **all** clients regardless of source IP — they are flagging request shapes that no legitimate caller (internal or external) produces.
 
 ## Configuration
 
@@ -107,7 +121,7 @@ The plugin includes IP-based rate limiting for `wp-login.php` to prevent brute f
 Uncomment these in `plugins/wordpress-hardening-config.conf` to override defaults:
 
 ```bash
-# Reduce to 3 attempts
+# Reduce to 3 attempts (window remains 60s)
 #SecAction "id:9522049,phase:1,nolog,pass,t:none,setvar:tx.wphard.ratelimit_login_attempts=3"
 
 # Change the window (allowed values: 30, 60, 120, 300, 600 — any other value
@@ -157,7 +171,7 @@ Blocks access to `wp-login.php` for clients from countries not in the allowed li
 **To enable:**
 1. Uncomment the SecAction in `plugins/wordpress-hardening-config.conf`:
    ```bash
-   SecAction "id:9522052,phase:1,nolog,pass,t:none,setvar:'tx.wphard.geoip_login_enabled=1'"
+   SecAction "id:9522902,phase:1,nolog,pass,t:none,setvar:'tx.wphard.geoip_login_enabled=1'"
    ```
 2. Populate `plugins/wordpress-hardening-login-countries.data` with the ISO codes of countries you want to allow (**lowercase, one per line**):
    ```
@@ -187,7 +201,7 @@ Blocks **all requests** (not just login attempts) from IP addresses listed in `p
 **To enable:**
 1. Uncomment the SecAction in `plugins/wordpress-hardening-config.conf`:
    ```bash
-   SecAction "id:9522053,phase:1,nolog,pass,t:none,setvar:'tx.wphard.ip_reputation_enabled=1'"
+   SecAction "id:9522903,phase:1,nolog,pass,t:none,setvar:'tx.wphard.ip_reputation_enabled=1'"
    ```
 2. Populate `plugins/wordpress-hardening-ip-reputation.data` with known bad IPs and CIDRs (one per line):
    ```
@@ -208,7 +222,8 @@ The plugin uses the allocated range **9522000-9522999**. Major buckets:
 | Range | Purpose |
 |---|---|
 | `9522010`-`9522055` | Config-knob `SecAction`s (commented examples in `config.conf`) |
-| `9522012`-`9522050` | Default-value setters (in `before.conf`) |
+| `9522012`-`9522050` | Default-value setters (in `before.conf`, IPv6/proxy series) |
+| `9522071`-`9522081` | Default-value setters (in `before.conf`, audit-round-4 protections) |
 | `9522060`-`9522065` | Client-IP resolver (`REMOTE_ADDR`, XFF v4/v6, trusted-proxy gate, `client_is_private`) |
 | `9522099` | Plugin kill-switch (removes 9522000-9522998) |
 | `9522101`-`9522111` | xmlrpc / user-enumeration / REST API / admin-login / wp-cron blocks |
@@ -235,6 +250,16 @@ Please see https://coreruleset.org/docs/concepts/plugins/#how-to-install-a-plugi
 
 ## Disabling the plugin
 The plugin can be disabled by uncommenting rule 9522010 inside ``plugins/wordpress-config.conf`` or by removing the includes for this plugin.
+
+## Known false-positive patterns
+
+Production traffic on `deb.myguard.nl` was audited on 2026-05-22; only the cases below have ever fired the hardening rules on legitimate requests. Everything else (138× `9522202`, 66× `9522206`, 24× `9522200`, 3× `9522104` over the recent window) was confirmed scanner / probe traffic.
+
+| Rule | Trigger | Why it's a FP | Mitigation |
+| ---- | ------- | ------------- | ---------- |
+| `9522104` | `GET /wp-json/wp/v2/users/me` (with or without `?context=edit&_locale=user`) | The block editor and `/wp-admin/` UI call `/users/me` on every page load to get the current user. It returns ONLY the authenticated user — it's not enumeration. | Tighten the regex to `(?:[/?&]author=[0-9]+)\|(?:/wp/v2/users/?(?:\?\|$))\|(?:/wp/v2/users/[0-9]+)` so `/users/me` and other non-numeric subroutes pass through. Numeric-ID lookups (`/users/42`) and the bare collection still block. |
+| `9522104` | Internal / loopback admin tooling | The xmlrpc / rest-api / wpcron rules already skip private-IP clients (`tx.wphard.client_is_private`); `9522104` does not. | Mirror the existing skip pattern (`SecRule TX:wphard.client_is_private "@eq 1" ... skipAfter:END_WPHARD_USER_ENUMERATION`) before `BEGIN_WPHARD_USER_ENUMERATION`. |
+| CRS `950140` (not this plugin, but commonly co-deployed) | Outbound block of blog posts containing `#!/...` shell snippets | CRS treats shebangs in the response body as "CGI source code leakage". Tutorial blogs that publish shell commands hit this on every post view. | Disable `950140` for the affected vhost via a host-scoped exclusion plugin (`SecRule REQUEST_HEADERS:Host "@streq <host>" "id:...,phase:1,pass,nolog,ctl:ruleRemoveById=950140"`). Do not disable globally. |
 
 ## Reporting false positives
 If you find a false positive that this plugin does not cover then please open a new issue or pull request, if creating an issue then please include the following details:

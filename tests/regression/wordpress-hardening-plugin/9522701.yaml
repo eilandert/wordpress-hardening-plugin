@@ -1,0 +1,14 @@
+---
+# Rules 9522701, 9522702, 9522703 are phase:3 response-header strippers that
+# fire when the upstream backend emits X-Pingback / X-Powered-By (matching
+# wordpress|php) / Link (matching api.w.org). They cannot be exercised by
+# ftw-style request-only tests because the framework's backend does not emit
+# those headers. Verification is operational: deploy the rules, hit /wp-login.php
+# on a real WordPress install, and confirm the response no longer contains
+# X-Pingback or the api.w.org Link header.
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: false
+  name: 9522701.yaml
+tests: []

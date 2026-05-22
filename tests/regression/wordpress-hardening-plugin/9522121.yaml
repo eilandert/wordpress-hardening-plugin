@@ -1,0 +1,67 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522121.yaml
+tests:
+  - test_title: 9522121-1
+    desc: BREACH mitigation fires on /wp-admin/ (Accept-Encoding gets stripped)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept-Encoding: gzip, deflate, br
+            port: 80
+            method: GET
+            uri: /wp-admin/
+          output:
+            log_contains: id "9522121"
+  - test_title: 9522121-2
+    desc: BREACH mitigation fires on /wp-login.php
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept-Encoding: gzip
+            port: 80
+            method: GET
+            uri: /wp-login.php
+          output:
+            log_contains: id "9522121"
+  - test_title: 9522121-3
+    desc: BREACH mitigation fires on /wp-json/
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept-Encoding: gzip
+            port: 80
+            method: GET
+            uri: /wp-json/wp/v2/posts
+          output:
+            log_contains: id "9522121"
+  - test_title: 9522121-4
+    desc: Negative — public page keeps Accept-Encoding (rule does not fire)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers:
+              Host: localhost
+              User-Agent: OWASP CRS
+              Accept-Encoding: gzip
+            port: 80
+            method: GET
+            uri: /about-us
+          output:
+            no_log_contains: id "9522121"

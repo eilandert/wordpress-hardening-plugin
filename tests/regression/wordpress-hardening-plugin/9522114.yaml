@@ -1,0 +1,67 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522114.yaml
+tests:
+  - test_title: 9522114-1
+    desc: wp-config.php.save backup is blocked
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-config.php.save
+          output:
+            log_contains: id "9522114"
+  - test_title: 9522114-2
+    desc: wp-config.old.php (atypical placement) — only the .old after wp-config is matched
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-config.old
+          output:
+            log_contains: id "9522114"
+  - test_title: 9522114-3
+    desc: wp-config.php~ tilde backup
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-config.php~
+          output:
+            log_contains: id "9522114"
+  - test_title: 9522114-4
+    desc: wp-config.php.1 numeric backup
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-config.php.1
+          output:
+            log_contains: id "9522114"
+  - test_title: 9522114-5
+    desc: Negative — actual wp-config.php must NOT match (it's blocked elsewhere as .php deny)
+    stages:
+      - stage:
+          input:
+            dest_addr: 127.0.0.1
+            headers: {Host: localhost, User-Agent: OWASP CRS}
+            port: 80
+            method: GET
+            uri: /wp-config.php
+          output:
+            no_log_contains: id "9522114"
