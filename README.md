@@ -26,7 +26,7 @@ What this plugin does so far:
 - Block compressed database dump access (.sql.gz/.sql.bz2/.sql.zip) (configurable, default: block) (PL1)
 - Block directory traversal attempts in /wp-content/uploads/ (configurable, default: block) (PL1)
 - Block null byte injection in URIs and parameters (configurable, default: block) (PL2)
-- Block known security scanner user agents like nikto, sqlmap, wpscan (configurable, default: non-block) (PL2)
+- Block known security scanner user agents like nikto, sqlmap, wpscan (configurable, default: non-block) (PL2). **SEO note:** the bundled UA list also includes third-party SEO crawlers (Ahrefs, Semrush, Majestic/MJ12, Moz/dotbot/rogerbot, Petal, etc.). Enabling this toggle hides your site from those services. Search-engine bots (Googlebot, Bingbot) and social previews (Twitterbot, LinkedInBot, facebookexternalhit/1.1) are NOT in the list and continue to work.
 - Block XDebug and phpinfo debug probe parameters (configurable, default: block) (PL1)
 - Block code injection patterns in wp-login.php POST parameters (configurable, default: block) (PL1)
 - Block dangerous wp-admin endpoints — upgrade.php, wp-activate.php (configurable, default: block) (PL2)
@@ -81,6 +81,8 @@ To eliminate that footgun:
    ```
 
 When enabled, `X-Forwarded-For` is honoured **only** if `REMOTE_ADDR` is in that list; otherwise the resolver falls back to `REMOTE_ADDR`.
+
+> **Scope:** the private-IP whitelist only applies to the xmlrpc / wp-json / wp-cron rules (`9522102`, `9522107`, `9522111`, `9522207`). The user-enumeration rule (`9522104`), the direct-PHP-access rule (`9522200`), sensitive-files (`9522202`/`9522206`), info-leak (`9522100`), VCS-dotfile (`9522113`), and the audit-round-4 protections (`9522112`-`9522122`, `9522701`-`9522703`) apply to **all** clients regardless of source IP — they are flagging request shapes that no legitimate caller (internal or external) produces.
 
 ## Configuration
 
@@ -248,6 +250,16 @@ Please see https://coreruleset.org/docs/concepts/plugins/#how-to-install-a-plugi
 
 ## Disabling the plugin
 The plugin can be disabled by uncommenting rule 9522010 inside ``plugins/wordpress-config.conf`` or by removing the includes for this plugin.
+
+## Known false-positive patterns
+
+Production traffic on `deb.myguard.nl` was audited on 2026-05-22; only the cases below have ever fired the hardening rules on legitimate requests. Everything else (138× `9522202`, 66× `9522206`, 24× `9522200`, 3× `9522104` over the recent window) was confirmed scanner / probe traffic.
+
+| Rule | Trigger | Why it's a FP | Mitigation |
+| ---- | ------- | ------------- | ---------- |
+| `9522104` | `GET /wp-json/wp/v2/users/me` (with or without `?context=edit&_locale=user`) | The block editor and `/wp-admin/` UI call `/users/me` on every page load to get the current user. It returns ONLY the authenticated user — it's not enumeration. | Tighten the regex to `(?:[/?&]author=[0-9]+)\|(?:/wp/v2/users/?(?:\?\|$))\|(?:/wp/v2/users/[0-9]+)` so `/users/me` and other non-numeric subroutes pass through. Numeric-ID lookups (`/users/42`) and the bare collection still block. |
+| `9522104` | Internal / loopback admin tooling | The xmlrpc / rest-api / wpcron rules already skip private-IP clients (`tx.wphard.client_is_private`); `9522104` does not. | Mirror the existing skip pattern (`SecRule TX:wphard.client_is_private "@eq 1" ... skipAfter:END_WPHARD_USER_ENUMERATION`) before `BEGIN_WPHARD_USER_ENUMERATION`. |
+| CRS `950140` (not this plugin, but commonly co-deployed) | Outbound block of blog posts containing `#!/...` shell snippets | CRS treats shebangs in the response body as "CGI source code leakage". Tutorial blogs that publish shell commands hit this on every post view. | Disable `950140` for the affected vhost via a host-scoped exclusion plugin (`SecRule REQUEST_HEADERS:Host "@streq <host>" "id:...,phase:1,pass,nolog,ctl:ruleRemoveById=950140"`). Do not disable globally. |
 
 ## Reporting false positives
 If you find a false positive that this plugin does not cover then please open a new issue or pull request, if creating an issue then please include the following details:
