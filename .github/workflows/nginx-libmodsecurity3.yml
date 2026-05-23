@@ -58,20 +58,17 @@ jobs:
             | tar -xzf - ftw
           chmod +x ftw
 
-      - name: Generate go-ftw config
+      - name: Generate go-ftw config (nginx @ :8002)
         run: |
-          # go-ftw v2 schema: overrides live under testoverride.overrides,
-          # not testoverride.input (v1 form silently ignored — see
-          # AUDIT-ROUND-5.md §3-P0).
-          {
-            echo '---'
-            echo 'logfile: tests/logs/nginx/audit.log'
-            echo 'testoverride:'
-            echo '  overrides:'
-            echo '    dest_addr: "127.0.0.1"'
-            echo '    port: 8002'
-            echo '    override_empty_host_header: true'
-          } > tests/integration/.ftw.yml
+          # Start from the committed apache .ftw.yml, retarget to nginx
+          # (port 8002, nginx log dir). The `testoverride.input:` schema
+          # + `ignore:` list for pre-existing audit-round-6 failures is
+          # preserved.
+          sed -e 's|tests/logs/apache/audit.log|tests/logs/nginx/audit.log|' \
+              -e 's|    port: 8001|    port: 8002|' \
+              tests/integration/.ftw.yml > tests/integration/.ftw.yml.new
+          mv tests/integration/.ftw.yml.new tests/integration/.ftw.yml
+          cat tests/integration/.ftw.yml
 
       - name: Run plugin regression suite
         run: |
