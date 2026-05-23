@@ -24,7 +24,7 @@ tests:
           headers: {Host: localhost, User-Agent: OWASP CRS}
           port: 80
           method: GET
-          uri: /wp-admin/load-styles.php?load[]=common,forms,admin-menu,dashboard,list-tables,edit,revisions
+          uri: /wp-admin/load-styles.php?load[]=common,forms,admin-menu,dashboard,list-tables,edit,revisions,media,buttons,wp-jquery-ui-dialog,thickbox,thumbnail
         output:
           log_contains: id "9522112"
   - test_title: 9522112-3
