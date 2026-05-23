@@ -184,18 +184,10 @@ jobs:
           done
           echo "✓ All expected rules present"
 
-  integration-tests:
-    needs: validate-gates
-    uses: coreruleset/crs-plugin-test-action/.github/workflows/integration.yaml@main
-    with:
-      backends: '["nginx"]'
-      crs-config: |
-        # Enable GeoIP-based login access control for integration tests.
-        # The allowed-countries data file (login-countries.data) is empty by default,
-        # so any request with a country header is blocked — allowing tests to verify
-        # both the block path (with CF-IPCountry) and the skip paths (no header / RFC1918).
-        SecAction "id:9519990,phase:1,nolog,pass,t:none,setvar:tx.wphard.geoip_login_enabled=1"
-        # Enable IP reputation blocklist for integration tests.
-        # The data file ships with 192.0.2.0/24 (RFC 5737 documentation range, never on internet)
-        # so tests can send X-Forwarded-For: 192.0.2.x to verify blocking.
-        SecAction "id:9519991,phase:1,nolog,pass,t:none,setvar:tx.wphard.ip_reputation_enabled=1"
+  # The external `coreruleset/crs-plugin-test-action` integration job that
+  # used to live here was superseded by:
+  #   - .github/workflows/apache-modsecurity2.yml (real Apache + ModSec v2)
+  #   - .github/workflows/nginx-libmodsecurity3.yml (real Angie + libmodsec3)
+  # Both run the regression suite and the security corpus against actual
+  # engines built from the production CRS Debian package. The gate
+  # validation above remains.
