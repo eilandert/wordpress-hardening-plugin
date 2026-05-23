@@ -8,52 +8,49 @@ tests:
   - test_title: 9522309-1
     desc: Test if URL-encoded null byte in URI is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-content/uploads/image%00.php
-            data: |
-              text
-          output:
-            log_contains: id "9522309"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-content/uploads/image%00.php
+          data: |
+            text
+        output:
+          log_contains: id "9522309"
   - test_title: 9522309-2
     desc: Test if null byte in query string is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-login.php?redirect_to=%00evil.com
-            data: |
-              text
-          output:
-            log_contains: id "9522309"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-login.php?redirect_to=%00evil.com
+          data: |
+            text
+        output:
+          log_contains: id "9522309"
   - test_title: 9522309-3
     desc: Test if null byte in POST param is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-              Content-Type: application/x-www-form-urlencoded
-            port: 80
-            method: POST
-            uri: /wp-login.php
-            data: |
-              log=admin%00evil&pwd=password
-          output:
-            log_contains: id "9522309"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            Content-Type: application/x-www-form-urlencoded
+          port: 80
+          method: POST
+          uri: /wp-login.php
+          data: |
+            log=admin%00evil&pwd=password
+        output:
+          log_contains: id "9522309"

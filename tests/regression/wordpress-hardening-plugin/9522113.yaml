@@ -8,72 +8,66 @@ tests:
   - test_title: 9522113-1
     desc: .env probe is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /.env
-          output:
-            log_contains: id "9522113"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /.env
+        output:
+          log_contains: id "9522113"
   - test_title: 9522113-2
     desc: .env.local probe is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /.env.local
-          output:
-            log_contains: id "9522113"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /.env.local
+        output:
+          log_contains: id "9522113"
   - test_title: 9522113-3
     desc: .git/config probe is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /.git/config
-          output:
-            log_contains: id "9522113"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /.git/config
+        output:
+          log_contains: id "9522113"
   - test_title: 9522113-4
     desc: .svn/entries probe is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /.svn/entries
-          output:
-            log_contains: id "9522113"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /.svn/entries
+        output:
+          log_contains: id "9522113"
   - test_title: 9522113-5
     desc: .DS_Store probe is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /.DS_Store
-          output:
-            log_contains: id "9522113"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /.DS_Store
+        output:
+          log_contains: id "9522113"
   - test_title: 9522113-6
     desc: Negative — legitimate URL containing 'env' must not match
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /environment/staging
-          output:
-            no_log_contains: id "9522113"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /environment/staging
+        output:
+          no_log_contains: id "9522113"

@@ -1,6 +1,11 @@
 ---
-logfile: tests/logs/nginx/audit.log
+# v2 schema: testoverride.input.* honoured because the koanf tag is "input".
+# (The audit's claim about "overrides:" was wrong — verified against
+# https://github.com/coreruleset/go-ftw/blob/v2.1.0/config/types.go .)
+# The real CI break was the legacy `stage:` wrapper in test stages.
+logfile: tests/logs/apache/audit.log
 testoverride:
   input:
     dest_addr: "127.0.0.1"
-    port: 8002
+    port: 8001
+    override_empty_host_header: true

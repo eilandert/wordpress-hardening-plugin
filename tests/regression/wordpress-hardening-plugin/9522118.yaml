@@ -8,28 +8,26 @@ tests:
   - test_title: 9522118-1
     desc: Bricks Builder render_element probe is blocked (CVE-2024-25600)
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: POST
-            uri: /wp-json/bricks/v1/render_element
-            data: |
-              {"element":{"name":"code"}}
-          output:
-            log_contains: id "9522118"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: POST
+          uri: /wp-json/bricks/v1/render_element
+          data: |
+            {"element":{"name":"code"}}
+        output:
+          log_contains: id "9522118"
   - test_title: 9522118-2
     desc: Bricks Builder via index.php?rest_route alternate path is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: POST
-            uri: /index.php?rest_route=/bricks/v1/render_element
-            data: |
-              {}
-          output:
-            log_contains: id "9522118"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: POST
+          uri: /index.php?rest_route=/bricks/v1/render_element
+          data: |
+            {}
+        output:
+          log_contains: id "9522118"

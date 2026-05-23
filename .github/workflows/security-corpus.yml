@@ -80,13 +80,17 @@ jobs:
           BACKEND: ${{ matrix.backend }}
           PORT: ${{ matrix.port }}
         run: |
+          # go-ftw v2 schema: overrides live under testoverride.overrides,
+          # not testoverride.input (v1 form silently ignored — see
+          # AUDIT-ROUND-5.md §3-P0).
           {
             echo '---'
             echo "logfile: tests/logs/${BACKEND}/audit.log"
             echo 'testoverride:'
-            echo '  input:'
+            echo '  overrides:'
             echo '    dest_addr: "127.0.0.1"'
             echo "    port: ${PORT}"
+            echo '    override_empty_host_header: true'
           } > tests/integration/.ftw.yml
 
       - name: Run WAF security corpus

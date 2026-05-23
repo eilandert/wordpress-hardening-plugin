@@ -8,68 +8,64 @@ tests:
   - test_title: 9522303-1
     desc: Test if backup directory access is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /backups/db-2024-01-01.sql
-            data: |
-              text
-          output:
-            log_contains: id "9522303"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /backups/db-2024-01-01.sql
+          data: |
+            text
+        output:
+          log_contains: id "9522303"
   - test_title: 9522303-2
     desc: Test if wp-content/backups directory access is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-content/backups/wordpress-2024.zip
-            data: |
-              text
-          output:
-            log_contains: id "9522303"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-content/backups/wordpress-2024.zip
+          data: |
+            text
+        output:
+          log_contains: id "9522303"
   - test_title: 9522303-3
     desc: Test if .tar.gz archive is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /site-backup-2024-01.tar.gz
-            data: |
-              text
-          output:
-            log_contains: id "9522303"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /site-backup-2024-01.tar.gz
+          data: |
+            text
+        output:
+          log_contains: id "9522303"
   - test_title: 9522303-4
     desc: Test if file containing -backup- pattern is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-content/uploads/wordpress-backup-files.tar.gz
-            data: |
-              text
-          output:
-            log_contains: id "9522303"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-content/uploads/wordpress-backup-files.tar.gz
+          data: |
+            text
+        output:
+          log_contains: id "9522303"

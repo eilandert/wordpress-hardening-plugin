@@ -8,68 +8,64 @@ tests:
   - test_title: 9522305-1
     desc: Test if compressed SQL dump is blocked (.sql.gz)
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /database.sql.gz
-            data: |
-              text
-          output:
-            log_contains: id "9522305"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /database.sql.gz
+          data: |
+            text
+        output:
+          log_contains: id "9522305"
   - test_title: 9522305-2
     desc: Test if bz2 compressed dump is blocked (.sql.bz2)
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-content/uploads/db-export.sql.bz2
-            data: |
-              text
-          output:
-            log_contains: id "9522305"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-content/uploads/db-export.sql.bz2
+          data: |
+            text
+        output:
+          log_contains: id "9522305"
   - test_title: 9522305-3
     desc: Test if mysqldump file is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /mysqldump-2024.sql
-            data: |
-              text
-          output:
-            log_contains: id "9522305"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /mysqldump-2024.sql
+          data: |
+            text
+        output:
+          log_contains: id "9522305"
   - test_title: 9522305-4
     desc: Test if zipped SQL file is blocked (.sql.zip)
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wordpress-db.sql.zip
-            data: |
-              text
-          output:
-            log_contains: id "9522305"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wordpress-db.sql.zip
+          data: |
+            text
+        output:
+          log_contains: id "9522305"

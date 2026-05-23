@@ -20,17 +20,16 @@ tests:
       log line on a permalink request is the externally observable
       effect of the FP suppression.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: Mozilla/5.0
-            port: 80
-            method: GET
-            uri: /2026/05/zstd-nginx-module-what-it-does-bugs-fixed/
-          output:
-            no_log_contains: 'id "(?:9522[0-9]+|953100|953110|953120)"'
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: Mozilla/5.0
+          port: 80
+          method: GET
+          uri: /2026/05/zstd-nginx-module-what-it-does-bugs-fixed/
+        output:
+          no_log_contains: 'id "(?:9522[0-9]+|953100|953110|953120)"'
 
   - test_title: 9522801-2
     desc: >
@@ -41,17 +40,16 @@ tests:
       /?author=N lookups, confirming the plugin's enforcement on
       enumeration paths is undisturbed.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: Mozilla/5.0
-            port: 80
-            method: GET
-            uri: /?author=1
-          output:
-            log_contains: id "9522104"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: Mozilla/5.0
+          port: 80
+          method: GET
+          uri: /?author=1
+        output:
+          log_contains: id "9522104"
 
   - test_title: 9522801-3
     desc: >
@@ -59,14 +57,13 @@ tests:
       9522xxx blocking rule. Sanity check that the negative regex in
       9522801 keeps front-end blog content clean across post layouts.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: Mozilla/5.0
-            port: 80
-            method: GET
-            uri: /2026/05/postfix-dovecot-setup-debian/
-          output:
-            no_log_contains: 'id "9522[0-9]+"'
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: Mozilla/5.0
+          port: 80
+          method: GET
+          uri: /2026/05/postfix-dovecot-setup-debian/
+        output:
+          no_log_contains: 'id "9522[0-9]+"'

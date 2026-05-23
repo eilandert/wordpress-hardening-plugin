@@ -60,13 +60,17 @@ jobs:
 
       - name: Generate go-ftw config
         run: |
+          # go-ftw v2 schema: overrides live under testoverride.overrides,
+          # not testoverride.input (v1 form silently ignored — see
+          # AUDIT-ROUND-5.md §3-P0).
           {
             echo '---'
             echo 'logfile: tests/logs/nginx/audit.log'
             echo 'testoverride:'
-            echo '  input:'
+            echo '  overrides:'
             echo '    dest_addr: "127.0.0.1"'
             echo '    port: 8002'
+            echo '    override_empty_host_header: true'
           } > tests/integration/.ftw.yml
 
       - name: Run plugin regression suite

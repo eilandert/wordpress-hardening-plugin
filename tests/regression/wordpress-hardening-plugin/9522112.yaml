@@ -8,36 +8,33 @@ tests:
   - test_title: 9522112-1
     desc: CVE-2018-6389 — long load= on load-scripts.php is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /wp-admin/load-scripts.php?load=jquery,jquery-ui-core,jquery-ui-widget,jquery-ui-mouse,jquery-ui-sortable,wp-pointer,wp-util,wp-a11y,wp-i18n
-          output:
-            log_contains: id "9522112"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /wp-admin/load-scripts.php?load=jquery,jquery-ui-core,jquery-ui-widget,jquery-ui-mouse,jquery-ui-sortable,wp-pointer,wp-util,wp-a11y,wp-i18n
+        output:
+          log_contains: id "9522112"
   - test_title: 9522112-2
     desc: CVE-2018-6389 — long load[]= array form is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /wp-admin/load-styles.php?load[]=common,forms,admin-menu,dashboard,list-tables,edit,revisions
-          output:
-            log_contains: id "9522112"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /wp-admin/load-styles.php?load[]=common,forms,admin-menu,dashboard,list-tables,edit,revisions
+        output:
+          log_contains: id "9522112"
   - test_title: 9522112-3
     desc: Negative — short legitimate load= must not match
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /wp-admin/load-scripts.php?load=jquery,common
-          output:
-            no_log_contains: id "9522112"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /wp-admin/load-scripts.php?load=jquery,common
+        output:
+          no_log_contains: id "9522112"

@@ -1,0 +1,109 @@
+---
+# Exercises the resolved client_ip private-IP classifier (rule 9522063)
+# indirectly through the xmlrpc whitelist: requests from a "private" client
+# IP skip 9522102 via rule 9522150, requests from a public IP fall through
+# and block. Tests cover IPv4 RFC1918, IPv6 loopback ::1, ULA fc00::/7,
+# IPv4-mapped IPv6 (::ffff:<v4>), and a negative for public IPv6.
+#
+# Per AUDIT-ROUND-5.md §1-P1: ::ffff:127.0.0.1 was not matched by the
+# earlier client_is_private regex — these tests prevent regression.
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin — IPv6-aware client_is_private classifier
+  enabled: true
+  name: 9522063.yaml
+tests:
+  - test_title: 9522063-1
+    desc: IPv4 loopback in XFF is treated as private (no xmlrpc block).
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS, X-Forwarded-For: '127.0.0.1'}
+          port: 80
+          method: GET
+          uri: /xmlrpc.php
+        output:
+          no_log_contains: id "9522102"
+  - test_title: 9522063-2
+    desc: IPv4 RFC1918 (10.0.0.5) in XFF is treated as private.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS, X-Forwarded-For: '10.0.0.5'}
+          port: 80
+          method: GET
+          uri: /xmlrpc.php
+        output:
+          no_log_contains: id "9522102"
+  - test_title: 9522063-3
+    desc: IPv6 loopback ::1 in XFF is treated as private.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS, X-Forwarded-For: '::1'}
+          port: 80
+          method: GET
+          uri: /xmlrpc.php
+        output:
+          no_log_contains: id "9522102"
+  - test_title: 9522063-4
+    desc: IPv6 ULA (fc00::abcd:1) in XFF is treated as private.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS, X-Forwarded-For: 'fc00::abcd:1'}
+          port: 80
+          method: GET
+          uri: /xmlrpc.php
+        output:
+          no_log_contains: id "9522102"
+  - test_title: 9522063-5
+    desc: IPv6 ULA (fd12:3456::1) in XFF is treated as private.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS, X-Forwarded-For: 'fd12:3456::1'}
+          port: 80
+          method: GET
+          uri: /xmlrpc.php
+        output:
+          no_log_contains: id "9522102"
+  - test_title: 9522063-6
+    desc: >
+      Regression for AUDIT-ROUND-5.md §1-P1 — IPv4-mapped loopback
+      (::ffff:127.0.0.1) must be classified as private. Dual-stack
+      proxies routinely forward IPv4 clients in this form.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS, X-Forwarded-For: '::ffff:127.0.0.1'}
+          port: 80
+          method: GET
+          uri: /xmlrpc.php
+        output:
+          no_log_contains: id "9522102"
+  - test_title: 9522063-7
+    desc: IPv4-mapped RFC1918 (::ffff:192.168.1.5) is classified as private.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS, X-Forwarded-For: '::ffff:192.168.1.5'}
+          port: 80
+          method: GET
+          uri: /xmlrpc.php
+        output:
+          no_log_contains: id "9522102"
+  - test_title: 9522063-8
+    desc: >
+      Compressed-form public IPv6 (2001:db8::1) is NOT private — xmlrpc
+      block must fire. Also exercises the mid-`::` first-hop regex fix
+      in rule 9522062.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS, X-Forwarded-For: '2001:db8::1'}
+          port: 80
+          method: GET
+          uri: /xmlrpc.php
+        output:
+          log_contains: id "9522102"

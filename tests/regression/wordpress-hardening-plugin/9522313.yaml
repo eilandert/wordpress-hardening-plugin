@@ -8,68 +8,101 @@ tests:
   - test_title: 9522313-1
     desc: Test if XDEBUG_SESSION_START probe is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-login.php?XDEBUG_SESSION_START=phpstorm
-            data: |
-              text
-          output:
-            log_contains: id "9522313"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-login.php?XDEBUG_SESSION_START=phpstorm
+          data: |
+            text
+        output:
+          log_contains: id "9522313"
   - test_title: 9522313-2
     desc: Test if XDEBUG_SESSION in cookie/param is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /?XDEBUG_SESSION=1
-            data: |
-              text
-          output:
-            log_contains: id "9522313"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /?XDEBUG_SESSION=1
+          data: |
+            text
+        output:
+          log_contains: id "9522313"
   - test_title: 9522313-3
     desc: Test if XDEBUG_PROFILE probe is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-admin/admin.php?XDEBUG_PROFILE=1
-            data: |
-              text
-          output:
-            log_contains: id "9522313"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-admin/admin.php?XDEBUG_PROFILE=1
+          data: |
+            text
+        output:
+          log_contains: id "9522313"
   - test_title: 9522313-4
     desc: Test if phpinfo probe is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /?phpinfo=1
-            data: |
-              text
-          output:
-            log_contains: id "9522313"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /?phpinfo=1
+          data: |
+            text
+        output:
+          log_contains: id "9522313"
+  - test_title: 9522313-5
+    desc: >
+      Regression for AUDIT-ROUND-5.md §1-P0 — lowercase xdebug_session_start
+      must also be detected. The old rule had uppercase XDEBUG_* literals
+      paired with t:lowercase, so the regex never matched the very payload
+      it was meant to block.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /wp-login.php?xdebug_session_start=phpstorm
+        output:
+          log_contains: id "9522313"
+  - test_title: 9522313-6
+    desc: Regression — XDEBUG_TRACE (uppercase) must be detected after t:lowercase normalisation.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /?XDEBUG_TRACE=1
+        output:
+          log_contains: id "9522313"
+  - test_title: 9522313-7
+    desc: Negative — a content slug containing the word "xdebugger" must not trip 9522313.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /blog/learning-xdebugger-internals
+        output:
+          no_log_contains: id "9522313"

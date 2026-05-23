@@ -11,20 +11,19 @@ tests:
       is detected when GeoIP feature is enabled and allowed list is empty.
       Rule 9522510 must fire.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Content-Type: application/x-www-form-urlencoded
-              CF-IPCountry: CN
-            port: 80
-            method: POST
-            uri: /wp-login.php
-            data: log=admin&pwd=password&wp-submit=Log+In
-          output:
-            log_contains: id "9522510"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Content-Type: application/x-www-form-urlencoded
+            CF-IPCountry: CN
+          port: 80
+          method: POST
+          uri: /wp-login.php
+          data: log=admin&pwd=password&wp-submit=Log+In
+        output:
+          log_contains: id "9522510"
 
   - test_title: 9522510-2
     desc: >
@@ -32,19 +31,18 @@ tests:
       Rule 9522504 (no country detected gate) must skip the block.
       Rule 9522510 must NOT fire.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Content-Type: application/x-www-form-urlencoded
-            port: 80
-            method: POST
-            uri: /wp-login.php
-            data: log=admin&pwd=password&wp-submit=Log+In
-          output:
-            no_log_contains: id "9522510"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Content-Type: application/x-www-form-urlencoded
+          port: 80
+          method: POST
+          uri: /wp-login.php
+          data: log=admin&pwd=password&wp-submit=Log+In
+        output:
+          no_log_contains: id "9522510"
 
   - test_title: 9522510-3
     desc: >
@@ -52,18 +50,17 @@ tests:
       of country header (rule 9522505 gates on /wp-login.php only).
       Rule 9522510 must NOT fire for a GET to /index.php.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              CF-IPCountry: RU
-            port: 80
-            method: GET
-            uri: /index.php
-          output:
-            no_log_contains: id "9522510"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            CF-IPCountry: RU
+          port: 80
+          method: GET
+          uri: /index.php
+        output:
+          no_log_contains: id "9522510"
 
   - test_title: 9522510-4
     desc: >
@@ -71,20 +68,19 @@ tests:
       also honoured when CF-IPCountry is absent.
       Rule 9522510 must fire for a blocked country via X-GeoIP-Country.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Content-Type: application/x-www-form-urlencoded
-              X-GeoIP-Country: RU
-            port: 80
-            method: POST
-            uri: /wp-login.php
-            data: log=admin&pwd=password&wp-submit=Log+In
-          output:
-            log_contains: id "9522510"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Content-Type: application/x-www-form-urlencoded
+            X-GeoIP-Country: RU
+          port: 80
+          method: POST
+          uri: /wp-login.php
+          data: log=admin&pwd=password&wp-submit=Log+In
+        output:
+          log_contains: id "9522510"
 
   - test_title: 9522510-5
     desc: >
@@ -93,21 +89,20 @@ tests:
       Rule 9522506 (IP whitelist via X-Forwarded-For) must skip the block.
       Rule 9522510 must NOT fire.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Content-Type: application/x-www-form-urlencoded
-              CF-IPCountry: CN
-              X-Forwarded-For: 192.168.1.1
-            port: 80
-            method: POST
-            uri: /wp-login.php
-            data: log=admin&pwd=password&wp-submit=Log+In
-          output:
-            no_log_contains: id "9522510"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Content-Type: application/x-www-form-urlencoded
+            CF-IPCountry: CN
+            X-Forwarded-For: 192.168.1.1
+          port: 80
+          method: POST
+          uri: /wp-login.php
+          data: log=admin&pwd=password&wp-submit=Log+In
+        output:
+          no_log_contains: id "9522510"
 
   - test_title: 9522510-6
     desc: >
@@ -119,40 +114,38 @@ tests:
       matches ^[A-Za-z]{2}$.)
       Rule 9522510 must fire for "cn".
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Content-Type: application/x-www-form-urlencoded
-              CF-IPCountry: cn
-            port: 80
-            method: POST
-            uri: /wp-login.php
-            data: log=admin&pwd=password&wp-submit=Log+In
-          output:
-            log_contains: id "9522510"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Content-Type: application/x-www-form-urlencoded
+            CF-IPCountry: cn
+          port: 80
+          method: POST
+          uri: /wp-login.php
+          data: log=admin&pwd=password&wp-submit=Log+In
+        output:
+          log_contains: id "9522510"
 
   - test_title: 9522510-7
     desc: >
       Regression: lowercase X-GeoIP-Country (generic proxy fallback) must also
       be normalised and drive the block. Rule 9522510 must fire for "ru".
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Content-Type: application/x-www-form-urlencoded
-              X-GeoIP-Country: ru
-            port: 80
-            method: POST
-            uri: /wp-login.php
-            data: log=admin&pwd=password&wp-submit=Log+In
-          output:
-            log_contains: id "9522510"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Content-Type: application/x-www-form-urlencoded
+            X-GeoIP-Country: ru
+          port: 80
+          method: POST
+          uri: /wp-login.php
+          data: log=admin&pwd=password&wp-submit=Log+In
+        output:
+          log_contains: id "9522510"
 
   - test_title: 9522510-8
     desc: >
@@ -165,17 +158,16 @@ tests:
       fire. Exercises the exact chain that previously carried skipAfter on its
       inner SecRule.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Content-Type: application/x-www-form-urlencoded
-              CF-IPCountry: CN
-            port: 80
-            method: POST
-            uri: /wp-login.php
-            data: log=admin&pwd=password&wp-submit=Log+In
-          output:
-            no_log_contains: id "9522510"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Content-Type: application/x-www-form-urlencoded
+            CF-IPCountry: CN
+          port: 80
+          method: POST
+          uri: /wp-login.php
+          data: log=admin&pwd=password&wp-submit=Log+In
+        output:
+          no_log_contains: id "9522510"

@@ -8,41 +8,38 @@ tests:
   - test_title: 9522203-1
     desc: A .sh script request must be blocked (only PHP is allowed).
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /scripts/backup.sh
-          output:
-            log_contains: id "9522203"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /scripts/backup.sh
+        output:
+          log_contains: id "9522203"
   - test_title: 9522203-2
     desc: A .py script request must be blocked.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /cgi-bin/tool.py
-          output:
-            log_contains: id "9522203"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /cgi-bin/tool.py
+        output:
+          log_contains: id "9522203"
   - test_title: 9522203-3
     desc: >
       .aspx must also be blocked (regex uses aspx? so both .asp and .aspx are
       covered; the old ".asp$" missed .aspx entirely).
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /legacy/default.aspx
-          output:
-            log_contains: id "9522203"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /legacy/default.aspx
+        output:
+          log_contains: id "9522203"
   - test_title: 9522203-4
     desc: >
       Regression: the extension dot must be a LITERAL dot. A path segment that
@@ -50,26 +47,24 @@ tests:
       blocked. Guards against the old unescaped ".(pl|...)" which matched any
       char before the suffix.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /refresh
-          output:
-            no_log_contains: id "9522203"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /refresh
+        output:
+          no_log_contains: id "9522203"
   - test_title: 9522203-5
     desc: >
       Regression: a normal PHP request must never be caught by the
       other-interpreter rule.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /index.php
-          output:
-            no_log_contains: id "9522203"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /index.php
+        output:
+          no_log_contains: id "9522203"
