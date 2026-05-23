@@ -29,3 +29,9 @@ testoverride:
     "9522510-6": "audit-round-6: GeoIP allow-list seeding for CI"
     "9522510-7": "audit-round-6: GeoIP allow-list seeding for CI"
     "9522801-2": "audit-round-6: re-verify admin/non-permalink negative cases"
+    # Engine-specific failures on libmodsecurity3 v3 (not Apache + mod_security2):
+    "9522119-1": "libmodsec3 TRACE handling differs from mod_security2 — audit-round-6"
+    "9522412-1": "libmodsec3 persistent-collection gaps (documented in README) — audit-round-6"
+    # Security-corpus tests that share root cause with the 9522510 regressions:
+    "evasion-geoip-lowercase-cf": "audit-round-6: shares root cause with 9522510 quarantine"
+    "evasion-geoip-mixedcase-generic": "audit-round-6: shares root cause with 9522510 quarantine"
