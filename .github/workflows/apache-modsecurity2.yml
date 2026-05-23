@@ -48,14 +48,25 @@ jobs:
           docker compose -f tests/integration/docker-compose.yml logs apache
           exit 1
 
-      - name: Install go-ftw
+      - name: Install go-ftw (retry on flaky tar/network)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download -R coreruleset/go-ftw \
-            -p 'ftw_*_linux_amd64.tar.gz' -O - "${GO_FTW_VERSION}" \
-            | tar -xzf - ftw
+          # Download to disk first (avoids pipe truncation on transient
+          # network errors that produced "tar: Error is not recoverable"
+          # in earlier runs). Retry up to 3x.
+          for attempt in 1 2 3; do
+            rm -f ftw.tgz ftw
+            if gh release download -R coreruleset/go-ftw \
+                -p 'ftw_*_linux_amd64.tar.gz' -O ftw.tgz "${GO_FTW_VERSION}" \
+                && tar -xzf ftw.tgz ftw; then
+              break
+            fi
+            echo "ftw download attempt ${attempt} failed; retrying"
+            sleep 5
+          done
           chmod +x ftw
+          test -x ftw
 
       - name: Use committed go-ftw config (apache @ :8001)
         run: |
