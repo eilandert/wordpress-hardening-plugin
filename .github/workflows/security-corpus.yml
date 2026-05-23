@@ -91,9 +91,12 @@ jobs:
             echo '    dest_addr: "127.0.0.1"'
             echo "    port: ${PORT}"
             echo '    override_empty_host_header: true'
+            # ftw v2 ignore keys are matched against the rule_id + test-index
+            # form (e.g. "9522000-9"), not test_title. The corpus YAML's
+            # rule_id is 9522000 and the GeoIP tests are #9 and #10.
             echo '  ignore:'
-            echo '    "evasion-geoip-lowercase-cf": "audit-round-6: shares 9522510 quarantine"'
-            echo '    "evasion-geoip-mixedcase-generic": "audit-round-6: shares 9522510 quarantine"'
+            echo '    "9522000-9": "audit-round-6: shares 9522510 quarantine (evasion-geoip-lowercase-cf)"'
+            echo '    "9522000-10": "audit-round-6: shares 9522510 quarantine (evasion-geoip-mixedcase-generic)"'
           } > tests/integration/.ftw.yml
 
       - name: Run WAF security corpus
