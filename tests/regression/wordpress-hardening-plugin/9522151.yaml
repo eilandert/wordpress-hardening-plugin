@@ -8,72 +8,68 @@ tests:
   - test_title: 9522151-1
     desc: Test that /wp-json is blocked from non-whitelisted IP (8.8.8.8)
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: application/json
-              X-Forwarded-For: 8.8.8.8
-            port: 80
-            method: GET
-            uri: /wp-json/wp/v2/posts
-            data: |
-              text
-          output:
-            log_contains: id "9522107"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: application/json
+            X-Forwarded-For: 8.8.8.8
+          port: 80
+          method: GET
+          uri: /wp-json/wp/v2/posts
+          data: |
+            text
+        output:
+          log_contains: id "9522107"
   - test_title: 9522151-2
     desc: Test that /wp-json is allowed from localhost (127.0.0.1)
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: application/json
-              X-Forwarded-For: 127.0.0.1
-            port: 80
-            method: GET
-            uri: /wp-json/wp/v2/posts
-            data: |
-              text
-          output:
-            log_not_contains: id "9522107"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: application/json
+            X-Forwarded-For: 127.0.0.1
+          port: 80
+          method: GET
+          uri: /wp-json/wp/v2/posts
+          data: |
+            text
+        output:
+          log_not_contains: id "9522107"
   - test_title: 9522151-3
     desc: Test that /wp-json is allowed from RFC 1918 IP (192.168.1.50)
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: application/json
-              X-Forwarded-For: 192.168.1.50
-            port: 80
-            method: GET
-            uri: /wp-json/wp/v2/pages
-            data: |
-              text
-          output:
-            log_not_contains: id "9522107"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: application/json
+            X-Forwarded-For: 192.168.1.50
+          port: 80
+          method: GET
+          uri: /wp-json/wp/v2/pages
+          data: |
+            text
+        output:
+          log_not_contains: id "9522107"
   - test_title: 9522151-4
     desc: Test that /wp-json is allowed from RFC 1918 IP (10.255.255.1)
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: application/json
-              X-Forwarded-For: 10.255.255.1
-            port: 80
-            method: GET
-            uri: /wp-json/wp/v2/users
-            data: |
-              text
-          output:
-            log_not_contains: id "9522107"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: application/json
+            X-Forwarded-For: 10.255.255.1
+          port: 80
+          method: GET
+          uri: /wp-json/wp/v2/users
+          data: |
+            text
+        output:
+          log_not_contains: id "9522107"

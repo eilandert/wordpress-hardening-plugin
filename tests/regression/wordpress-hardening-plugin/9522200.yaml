@@ -8,166 +8,156 @@ tests:
   - test_title: 9522200-1
     desc: Test if php in the plugins directory is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-content/plugins/modsecurity/modsecurity.php
-            data: |
-              text
-          output:
-            log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-content/plugins/modsecurity/modsecurity.php
+          data: |
+            text
+        output:
+          log_contains: id "9522200"
   - test_title: 9522200-2
     desc: Test if /wp-includes/*.php is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-includes/wp-db.php
-            data: |
-              text
-          output:
-            log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-includes/wp-db.php
+          data: |
+            text
+        output:
+          log_contains: id "9522200"
   - test_title: 9522200-3
     desc: Test if /index.php is working
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /index.php
-            data: |
-              text
-          output:
-            no_log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /index.php
+          data: |
+            text
+        output:
+          no_log_contains: id "9522200"
   - test_title: 9522200-4
     desc: Test if /wp-admin/admin-ajax.php is working
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-admin/admin-ajax.php
-            data: |
-              text
-          output:
-            no_log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-admin/admin-ajax.php
+          data: |
+            text
+        output:
+          no_log_contains: id "9522200"
   - test_title: 9522200-5
     desc: Test if wp-cron is working
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-cron.php
-            data: |
-              text
-          output:
-            no_log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-cron.php
+          data: |
+            text
+        output:
+          no_log_contains: id "9522200"
   - test_title: 9522200-6
     desc: Test if xmlrpc is working
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /xmlrpc.php
-            data: |
-              text
-          output:
-            no_log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /xmlrpc.php
+          data: |
+            text
+        output:
+          no_log_contains: id "9522200"
   - test_title: 9522200-7
     desc: Test if wp-login.php is working
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-login.php
-            data: |
-              text
-          output:
-            no_log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-login.php
+          data: |
+            text
+        output:
+          no_log_contains: id "9522200"
   - test_title: 9522200-8
     desc: >
       Edge: the allow-list anchors index.php to a path boundary. A look-alike
       filename like "/myindex.php" is NOT the real /index.php and must still be
       blocked (the negative lookahead requires (^|/) before "index").
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /myindex.php
-          output:
-            log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /myindex.php
+        output:
+          log_contains: id "9522200"
   - test_title: 9522200-9
     desc: >
       Edge: a nested non-whitelisted PHP file under a deep path must be blocked
       (e.g. /wp-content/uploads/evil.php — a classic upload-shell location).
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /wp-content/uploads/2026/evil.php
-          output:
-            log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /wp-content/uploads/2026/evil.php
+        output:
+          log_contains: id "9522200"
   - test_title: 9522200-10
     desc: >
       Edge: index.php with a query string is still the legitimate front
       controller and must NOT be blocked. The regex anchors ".php$" on
       REQUEST_FILENAME (path only, query stripped), so this must pass.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /index.php?rest_route=/wp/v2/posts
-          output:
-            no_log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /index.php?rest_route=/wp/v2/posts
+        output:
+          no_log_contains: id "9522200"
   - test_title: 9522200-11
     desc: >
       S4 FIXED (regression): the wp-admin allow-list is now anchored to the
@@ -175,29 +165,27 @@ tests:
       directory under uploads can NO LONGER be used to serve a PHP shell.
       /wp-content/uploads/wp-admin/shell.php MUST now be blocked.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /wp-content/uploads/wp-admin/shell.php
-          output:
-            log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /wp-content/uploads/wp-admin/shell.php
+        output:
+          log_contains: id "9522200"
   - test_title: 9522200-12
     desc: >
       A genuine top-level /wp-admin/ PHP endpoint must still be allowed after
       the anchor fix (no false positive on legitimate admin traffic).
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /wp-admin/options-general.php
-          output:
-            no_log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /wp-admin/options-general.php
+        output:
+          no_log_contains: id "9522200"
   - test_title: 9522200-13
     desc: >
       P2 regression: a long crafted URI with many segments and no ".php" must
@@ -205,12 +193,11 @@ tests:
       anchored "\.php$" chain). It must NOT be blocked (not a PHP request) and
       must return promptly.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/notphp
-          output:
-            no_log_contains: id "9522200"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/notphp
+        output:
+          no_log_contains: id "9522200"

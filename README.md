@@ -110,6 +110,19 @@ The plugin includes IP-based rate limiting for `wp-login.php` to prevent brute f
 > native rate-limiter (e.g. nginx/Angie's `limit_req zone=...`) for
 > `/wp-login.php` and treat this plugin's rate-limiter as Apache-only.
 
+> **⚠️ Collection growth (DoS):** `initcol:ip=%{client_ip}` creates one
+> SDBM entry per resolved IP under `SecDataDir`. The plugin does NOT set
+> `SecCollectionTimeout` (the CRS plugin convention says only operators
+> may set it). On a server with direct internet exposure — i.e. where
+> trusted-proxy pinning is OFF — an attacker rotating source IPs (easy
+> over IPv6) can grow the collection file unboundedly. Operators MUST:
+>
+> 1. Set `SecCollectionTimeout 300` (or higher) in the engine config.
+> 2. Place `SecDataDir` on a partition that can absorb growth or has a
+>    housekeeping cron.
+> 3. Enable [Trusted-Proxy Pinning](#trusted-proxy-pinning) on direct-
+>    exposure servers so the counter keys on a vetted upstream.
+
 **Default settings:**
 - **Enabled by default** (`ratelimit_login_enabled`)
 - **5 login attempts** per IP (`ratelimit_login_attempts`)

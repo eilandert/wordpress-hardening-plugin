@@ -41,17 +41,12 @@ RUN mkdir -p /opt/crs/plugins \
  && cp /etc/modsecurity/crs/crs-setup.conf.example /opt/crs/crs-setup.conf \
  && cp -a /etc/modsecurity/crs/rules /opt/crs/rules
 
-# Drop in this plugin (config + before + .data files).
+# Drop in this plugin (config + before + after + .data files).
 COPY plugins/ /opt/crs/plugins/
 
-# This plugin ships no *-after.conf. mod_security2 routes crs-main.conf
-# through Apache's config parser, which aborts on a zero-match Include glob
-# (even IncludeOptional, when the wildcard is the whole filename). A no-op
-# after file keeps the canonical config/before/after chain matching on every
-# parser. CI-only — the published plugin is untouched.
-RUN printf '%s\n' \
-      '# CI no-op: keeps the *-after.conf glob non-empty for strict parsers.' \
-      > /opt/crs/plugins/zzz-ci-noop-after.conf
+# Note: as of audit-round-5 the plugin ships a real *-after.conf carrying
+# the phase:1 scoring rules per CRS convention. The zzz-ci-noop-after.conf
+# stub previously created here is no longer needed.
 
 # Engine config + the include chain (DetectionOnly, serial audit log, the
 # go-ftw log marker, GeoIP/IP-rep enabled — see the files themselves).

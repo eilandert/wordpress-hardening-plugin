@@ -16,15 +16,14 @@ tests:
       rule (we use 9522102 / xmlrpc) actually fires by default. The presence
       of id "9522102" in the log proves the plugin is enabled out of the box.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              X-Forwarded-For: 8.8.8.8
-            port: 80
-            method: GET
-            uri: /xmlrpc.php
-          output:
-            log_contains: id "9522102"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            X-Forwarded-For: 8.8.8.8
+          port: 80
+          method: GET
+          uri: /xmlrpc.php
+        output:
+          log_contains: id "9522102"

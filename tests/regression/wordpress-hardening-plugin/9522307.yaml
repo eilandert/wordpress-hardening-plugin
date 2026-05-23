@@ -8,68 +8,64 @@ tests:
   - test_title: 9522307-1
     desc: Test if directory traversal in uploads is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-content/uploads/../wp-config.php
-            data: |
-              text
-          output:
-            log_contains: id "9522307"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-content/uploads/../wp-config.php
+          data: |
+            text
+        output:
+          log_contains: id "9522307"
   - test_title: 9522307-2
     desc: Test if double-dot traversal with encoded slash is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-content/uploads/2024/../../wp-config.php
-            data: |
-              text
-          output:
-            log_contains: id "9522307"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-content/uploads/2024/../../wp-config.php
+          data: |
+            text
+        output:
+          log_contains: id "9522307"
   - test_title: 9522307-3
     desc: Test if traversal into wp-includes is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-            port: 80
-            method: GET
-            uri: /wp-content/uploads/../../../wp-includes/functions.php
-            data: |
-              text
-          output:
-            log_contains: id "9522307"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+          port: 80
+          method: GET
+          uri: /wp-content/uploads/../../../wp-includes/functions.php
+          data: |
+            text
+        output:
+          log_contains: id "9522307"
   - test_title: 9522307-4
     desc: >
       Negative: a normal uploads request with no ".." sequence must NOT be
       flagged as traversal.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /wp-content/uploads/2026/05/photo.jpg
-          output:
-            no_log_contains: id "9522307"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /wp-content/uploads/2026/05/photo.jpg
+        output:
+          no_log_contains: id "9522307"
   - test_title: 9522307-5
     desc: >
       S6 FIXED (regression): the rule now applies t:urlDecodeUni and no longer
@@ -77,15 +73,14 @@ tests:
       percent-encoded traversal "%2e%2e" is decoded to ".." and MUST now be
       blocked. Closes the previous bypass.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /wp-content/uploads/%2e%2e/%2e%2e/wp-config.php
-          output:
-            log_contains: id "9522307"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /wp-content/uploads/%2e%2e/%2e%2e/wp-config.php
+        output:
+          log_contains: id "9522307"
   - test_title: 9522307-6
     desc: >
       S6 regression: double-encoded traversal "%252e%252e" — the first
@@ -94,12 +89,11 @@ tests:
       known residual limitation so a future second-decode change is noticed.
       TODO(security): consider a second t:urlDecodeUni on 9522307.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /wp-content/uploads/%252e%252e/wp-config.php
-          output:
-            no_log_contains: id "9522307"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /wp-content/uploads/%252e%252e/wp-config.php
+        output:
+          no_log_contains: id "9522307"

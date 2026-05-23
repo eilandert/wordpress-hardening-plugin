@@ -15,28 +15,26 @@ tests:
   - test_title: fp-homepage
     desc: Plain homepage GET must not trip the plugin.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: Mozilla/5.0}
-            port: 80
-            method: GET
-            uri: /
-          output:
-            no_log_contains: id "9522
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: Mozilla/5.0}
+          port: 80
+          method: GET
+          uri: /
+        output:
+          no_log_contains: id "9522
 
   - test_title: fp-normal-post
     desc: Reading a normal permalink must not trip the plugin.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: Mozilla/5.0}
-            port: 80
-            method: GET
-            uri: /2026/05/some-blog-post/
-          output:
-            no_log_contains: id "9522
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: Mozilla/5.0}
+          port: 80
+          method: GET
+          uri: /2026/05/some-blog-post/
+        output:
+          no_log_contains: id "9522
 
   - test_title: fp-admin-ajax
     desc: >
@@ -46,20 +44,19 @@ tests:
       when the chained allow-list check passed. Assert no anomaly score is
       contributed (per_pl=0-0-0-0) in addition to no 9522 rule log line.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: Mozilla/5.0
-              Content-Type: application/x-www-form-urlencoded
-            port: 80
-            method: POST
-            uri: /wp-admin/admin-ajax.php
-            data: "action=heartbeat&_nonce=abc123&data=1"
-          output:
-            no_log_contains: id "9522
-            no_log_contains: "per_pl=[1-9]"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: Mozilla/5.0
+            Content-Type: application/x-www-form-urlencoded
+          port: 80
+          method: POST
+          uri: /wp-admin/admin-ajax.php
+          data: "action=heartbeat&_nonce=abc123&data=1"
+        output:
+          no_log_contains: id "9522
+          no_log_contains: "per_pl=[1-9]"
 
   - test_title: fp-wpcron-internal
     desc: >
@@ -67,19 +64,18 @@ tests:
       Regression for the chain-setvar bug in 9522200: assert no anomaly
       score is contributed in addition to no 9522 rule log line.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: "WordPress/6.9; https://localhost"
-              X-Forwarded-For: 127.0.0.1
-            port: 80
-            method: POST
-            uri: /wp-cron.php?doing_wp_cron=1779142579.0
-          output:
-            no_log_contains: id "9522
-            no_log_contains: "per_pl=[1-9]"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: "WordPress/6.9; https://localhost"
+            X-Forwarded-For: 127.0.0.1
+          port: 80
+          method: POST
+          uri: /wp-cron.php?doing_wp_cron=1779142579.0
+        output:
+          no_log_contains: id "9522
+          no_log_contains: "per_pl=[1-9]"
 
   - test_title: fp-wp-login-plain
     desc: >
@@ -88,78 +84,73 @@ tests:
       beginning with "/wp-login.php", scoring +5 even when no injection was
       present in ARGS:log/pwd. Assert no anomaly score and no rule log line.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: Mozilla/5.0}
-            port: 80
-            method: GET
-            uri: /wp-login.php
-          output:
-            no_log_contains: id "9522
-            no_log_contains: "per_pl=[1-9]"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: Mozilla/5.0}
+          port: 80
+          method: GET
+          uri: /wp-login.php
+        output:
+          no_log_contains: id "9522
+          no_log_contains: "per_pl=[1-9]"
 
   - test_title: fp-wp-login-normal-post
     desc: >
       Normal wp-login.php POST (no injection) is legit. Regression for
       9522315 chain-setvar bug — assert no anomaly score contribution.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: Mozilla/5.0
-              Content-Type: application/x-www-form-urlencoded
-            port: 80
-            method: POST
-            uri: /wp-login.php
-            data: "log=normaluser&pwd=correcthorsebatterystaple&wp-submit=Log+In"
-          output:
-            no_log_contains: id "9522
-            no_log_contains: "per_pl=[1-9]"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: Mozilla/5.0
+            Content-Type: application/x-www-form-urlencoded
+          port: 80
+          method: POST
+          uri: /wp-login.php
+          data: "log=normaluser&pwd=correcthorsebatterystaple&wp-submit=Log+In"
+        output:
+          no_log_contains: id "9522
+          no_log_contains: "per_pl=[1-9]"
 
   - test_title: fp-wpjson-subpath-read
     desc: >
       Only the /wp-json ROOT is blocked (9522207); a real REST read of a
       sub-resource must pass when block_rest_api is default-off.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: Mozilla/5.0}
-            port: 80
-            method: GET
-            uri: /wp-json/wp/v2/posts?per_page=5
-          output:
-            no_log_contains: id "9522
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: Mozilla/5.0}
+          port: 80
+          method: GET
+          uri: /wp-json/wp/v2/posts?per_page=5
+        output:
+          no_log_contains: id "9522
 
   - test_title: fp-upload-image
     desc: Serving a normal uploaded image must not hit the upload-traversal
       / interpreter rules.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: Mozilla/5.0}
-            port: 80
-            method: GET
-            uri: /wp-content/uploads/2026/05/holiday-photo.webp
-          output:
-            no_log_contains: id "9522
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: Mozilla/5.0}
+          port: 80
+          method: GET
+          uri: /wp-content/uploads/2026/05/holiday-photo.webp
+        output:
+          no_log_contains: id "9522
 
   - test_title: fp-theme-asset
     desc: Loading a theme stylesheet must not trip the php/file rules.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: Mozilla/5.0}
-            port: 80
-            method: GET
-            uri: /wp-content/themes/twentytwentyfive/style.css?ver=1.2
-          output:
-            no_log_contains: id "9522
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: Mozilla/5.0}
+          port: 80
+          method: GET
+          uri: /wp-content/themes/twentytwentyfive/style.css?ver=1.2
+        output:
+          no_log_contains: id "9522
 
   - test_title: fp-legit-login-whitelisted-ip
     desc: >
@@ -167,21 +158,20 @@ tests:
       be GeoIP-blocked or login-injection-blocked even with the GeoIP feature
       enabled (rule 9522506 IP whitelist applies).
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: Mozilla/5.0
-              Content-Type: application/x-www-form-urlencoded
-              X-Forwarded-For: 192.168.1.50
-              CF-IPCountry: NL
-            port: 80
-            method: POST
-            uri: /wp-login.php
-            data: "log=alice&pwd=correcthorsebatterystaple&wp-submit=Log+In"
-          output:
-            no_log_contains: id "9522
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: Mozilla/5.0
+            Content-Type: application/x-www-form-urlencoded
+            X-Forwarded-For: 192.168.1.50
+            CF-IPCountry: NL
+          port: 80
+          method: POST
+          uri: /wp-login.php
+          data: "log=alice&pwd=correcthorsebatterystaple&wp-submit=Log+In"
+        output:
+          no_log_contains: id "9522
 
   - test_title: fp-tutorial-permalink-php-keywords
     desc: >
@@ -195,15 +185,14 @@ tests:
       GET produces no plugin rule fire and that 953100/953110/953120 are not
       logged either.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: Mozilla/5.0}
-            port: 80
-            method: GET
-            uri: /2026/05/nginx-angie-the-expert-guide-to-maximum-performance-and-security/
-          output:
-            no_log_contains: id "9522
-            no_log_contains: id "953100"
-            no_log_contains: id "953110"
-            no_log_contains: id "953120"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: Mozilla/5.0}
+          port: 80
+          method: GET
+          uri: /2026/05/nginx-angie-the-expert-guide-to-maximum-performance-and-security/
+        output:
+          no_log_contains: id "9522
+          no_log_contains: id "953100"
+          no_log_contains: id "953110"
+          no_log_contains: id "953120"

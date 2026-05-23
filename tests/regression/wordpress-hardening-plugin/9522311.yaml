@@ -8,54 +8,51 @@ tests:
   - test_title: 9522311-1
     desc: Test if nikto scanner user-agent is blocked (block_scanners must be ON)
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: Nikto/2.1.6
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-              TX.wphard.block_scanners: "1"
-            port: 80
-            method: GET
-            uri: /
-            data: |
-              text
-          output:
-            log_contains: id "9522311"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: Nikto/2.1.6
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            TX.wphard.block_scanners: "1"
+          port: 80
+          method: GET
+          uri: /
+          data: |
+            text
+        output:
+          log_contains: id "9522311"
   - test_title: 9522311-2
     desc: Test if sqlmap scanner user-agent is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: "sqlmap/1.7 (https://sqlmap.org)"
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-              TX.wphard.block_scanners: "1"
-            port: 80
-            method: GET
-            uri: /wp-login.php
-            data: |
-              text
-          output:
-            log_contains: id "9522311"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: "sqlmap/1.7 (https://sqlmap.org)"
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            TX.wphard.block_scanners: "1"
+          port: 80
+          method: GET
+          uri: /wp-login.php
+          data: |
+            text
+        output:
+          log_contains: id "9522311"
   - test_title: 9522311-3
     desc: Test if WPScan user-agent is blocked
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: "WPScan v3.8.22 (https://wpscan.com/wordpress-security-scanner)"
-              Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
-              TX.wphard.block_scanners: "1"
-            port: 80
-            method: GET
-            uri: /
-            data: |
-              text
-          output:
-            log_contains: id "9522311"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: "WPScan v3.8.22 (https://wpscan.com/wordpress-security-scanner)"
+            Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+            TX.wphard.block_scanners: "1"
+          port: 80
+          method: GET
+          uri: /
+          data: |
+            text
+        output:
+          log_contains: id "9522311"

@@ -13,30 +13,28 @@ tests:
       rule 9522604 must NOT fire. Confirms the no-XFF chain is structurally
       sound and does not false-positive on a clean source IP.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers: {Host: localhost, User-Agent: OWASP CRS}
-            port: 80
-            method: GET
-            uri: /
-          output:
-            no_log_contains: id "9522604"
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: OWASP CRS}
+          port: 80
+          method: GET
+          uri: /
+        output:
+          no_log_contains: id "9522604"
   - test_title: 9522604-2
     desc: >
       When X-Forwarded-For IS present, the &X-Forwarded-For @eq 0 chain starter
       is false, so rule 9522604 is skipped entirely (the XFF-based rule 9522603
       handles that case instead). Rule 9522604 must NOT fire.
     stages:
-      - stage:
-          input:
-            dest_addr: 127.0.0.1
-            headers:
-              Host: localhost
-              User-Agent: OWASP CRS
-              X-Forwarded-For: 8.8.8.8
-            port: 80
-            method: GET
-            uri: /
-          output:
-            no_log_contains: id "9522604"
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            X-Forwarded-For: 8.8.8.8
+          port: 80
+          method: GET
+          uri: /
+        output:
+          no_log_contains: id "9522604"
