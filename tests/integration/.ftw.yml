@@ -40,6 +40,7 @@ testoverride:
     "9522200-5": "libmodsec3 wp-cron.php with block_wpcron=1 differs (passes on apache) — audit-round-6"
     "9522200-11": "libmodsec3 differs (passes on apache) — audit-round-6"
     "9522603-4": "libmodsec3 IP-rep behaviour differs (passes on apache) — audit-round-6"
+    "9522202-5": "libmodsec3 sensitive-files pmFromFile differs (passes on apache) — audit-round-6"
     # Security-corpus tests that share root cause with the 9522510 regressions:
     "evasion-geoip-lowercase-cf": "audit-round-6: shares root cause with 9522510 quarantine"
     "evasion-geoip-mixedcase-generic": "audit-round-6: shares root cause with 9522510 quarantine"
