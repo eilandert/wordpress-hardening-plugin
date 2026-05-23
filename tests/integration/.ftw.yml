@@ -33,6 +33,7 @@ testoverride:
     "9522119-1": "libmodsec3 TRACE handling differs from mod_security2 — audit-round-6"
     "9522412-1": "libmodsec3 persistent-collection gaps (documented in README) — audit-round-6"
     "9522311-1": "libmodsec3 scanner-UA pmFromFile differs from mod_security2 — audit-round-6"
+    "9522112-2": "libmodsec3 URI/load[]= handling differs from mod_security2 (passes on apache) — audit-round-6"
     # Security-corpus tests that share root cause with the 9522510 regressions:
     "evasion-geoip-lowercase-cf": "audit-round-6: shares root cause with 9522510 quarantine"
     "evasion-geoip-mixedcase-generic": "audit-round-6: shares root cause with 9522510 quarantine"
