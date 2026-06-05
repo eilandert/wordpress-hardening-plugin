@@ -4,7 +4,7 @@
 This plugin contains extra rules to enhance the security of wordpress installations with the OWASP Core Rule Set.
 It's encouraged to install the wordpress-exclusions-rules-plugin as well, as we only add extra blocks in this plugin.
 
-More information: https://deb.myguard.nl/2026/05/wordpress-hardening-plugin-modsecurity-crs-block-attacks/
+📖 **Full guide & deep-dive (every rule explained):** [WordPress Hardening Plugin for ModSecurity CRS — Block XSS & SQLi at the WAF](https://deb.myguard.nl/2026/05/wordpress-hardening-plugin-modsecurity-crs-block-attacks/) on deb.myguard.nl. Covers the AI-discovered vulnerability wave, the typed-parameter SQLi/XSS rules, and the defense-in-depth stack (updates · [php-snuffleupagus](https://deb.myguard.nl/2026/05/php-snuffleupagus-tutorial-harden-php-fpm/) · [web-server hardening](https://deb.myguard.nl/2026/05/how-to-install-modsecurity-owasp-crs-nginx/) · [Docker hardening](https://deb.myguard.nl/2026/05/docker-hardening-rootless-readonly-distroless/)).
 
 The idea is to enhance the security of WordPress while minimizing the impact on PHP/SQL performance and eliminating the need for additional wordpress security plugins without interfering with wordpress or owasp.
 
@@ -47,6 +47,11 @@ What this plugin does so far:
 - Block legacy CVE scanner probes — revslider, timthumb, WP Symposium, MailPoet wysija_captcha, wp-file-manager, Duplicator installer (configurable, default: block) (PL1)
 - BREACH/CRIME compression side-channel detection — tag requests to /wp-admin/, /wp-login.php, /wp-json/* (configurable, default: tag). Real stripping must be configured at the proxy: `proxy_set_header Accept-Encoding "";` + `gzip off;` + `brotli off;` on those locations. (PL1)
 - Block public /author/<slug>/ archive pages (configurable, default: non-block — most blogs expose these) (PL2)
+- Block ORDER BY injection — `order=` must be `asc`/`desc`, `orderby=` must be a bare column name with no SQL metacharacters/keywords (configurable, default: block) (PL1; PL2 adds a strict column-name allowlist). The #1 WordPress plugin SQLi class; a typed allowlist is strictly stronger than libinjection, which has documented ORDER BY bypasses.
+- Block SQLi / reflected-XSS in WP-core numeric query-vars — `p`, `page_id`, `attachment_id`, `m`, `w`, `year`, `monthnum`, `day`, `hour`, `minute`, `paged`, `cpage` must be integer (configurable, default: block — zero false-positive; `cat`/`author` excluded as they accept comma/negative lists) (PL1)
+- Block non-integer values in generic plugin id params — `id`, `post_id`, `user_id`, `term_id`, `parent_id`, `comment_id` (configurable, default: **non-block** — these names are generic; only enforced at PL2 when enabled) (PL2)
+
+> **Why these were added:** CRS already runs libinjection (`@detectSQLi`/`@detectXSS`) on all arguments at PL1. The rules above do **not** duplicate that — they add the *semantic/typed* parameter validation CRS lacks, which is exactly where the 2025–2026 wave of (often AI-discovered) WordPress plugin SQLi/XSS CVEs slips through.
 
 ## IP Whitelisting
 
