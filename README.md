@@ -4,7 +4,7 @@
 This plugin contains extra rules to enhance the security of wordpress installations with the OWASP Core Rule Set.
 It's encouraged to install the wordpress-exclusions-rules-plugin as well, as we only add extra blocks in this plugin.
 
-📖 **Full guide & deep-dive (every rule explained):** [WordPress Hardening Plugin for ModSecurity CRS — Block XSS & SQLi at the WAF](https://deb.myguard.nl/2026/05/wordpress-hardening-plugin-modsecurity-crs-block-attacks/) on deb.myguard.nl. Covers the AI-discovered vulnerability wave, the typed-parameter SQLi/XSS rules, and the defense-in-depth stack (updates · [php-snuffleupagus](https://deb.myguard.nl/2026/05/php-snuffleupagus-tutorial-harden-php-fpm/) · [web-server hardening](https://deb.myguard.nl/2026/05/how-to-install-modsecurity-owasp-crs-nginx/) · [Docker hardening](https://deb.myguard.nl/2026/05/docker-hardening-rootless-readonly-distroless/)).
+📖 **Full guide & deep-dive (every rule explained):** [WordPress Hardening Plugin for ModSecurity CRS — Block XSS & SQLi at the WAF](https://deb.myguard.nl/2026/06/wordpress-hardening-plugin-modsecurity-crs-block-attacks/) on deb.myguard.nl. Covers the AI-discovered vulnerability wave, the typed-parameter SQLi/XSS rules, and the defense-in-depth stack (updates · [php-snuffleupagus](https://deb.myguard.nl/2026/05/php-snuffleupagus-tutorial-harden-php-fpm/) · [web-server hardening](https://deb.myguard.nl/2026/05/how-to-install-modsecurity-owasp-crs-nginx/) · [Docker hardening](https://deb.myguard.nl/2026/05/docker-hardening-rootless-readonly-distroless/)).
 
 The idea is to enhance the security of WordPress while minimizing the impact on PHP/SQL performance and eliminating the need for additional wordpress security plugins without interfering with wordpress or owasp.
 
