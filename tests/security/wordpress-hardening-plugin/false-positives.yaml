@@ -196,3 +196,90 @@ tests:
           no_log_contains: id "953100"
           no_log_contains: id "953110"
           no_log_contains: id "953120"
+
+  - test_title: fp-orderby-legit
+    desc: >
+      Legitimate sortable archive (orderby=column, order=asc|desc) must not
+      trip the typed-param SQLi rules 9522330/9522331/9522332.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: Mozilla/5.0}
+          port: 80
+          method: GET
+          uri: "/shop/?orderby=post_date&order=desc"
+        output:
+          no_log_contains: id "9522
+
+  - test_title: fp-orderby-multicolumn
+    desc: >
+      Space/comma-separated multi-column orderby (WP accepts "title menu_order")
+      must pass the PL1 metachar check (9522331) and the PL2 allowlist (9522332).
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: Mozilla/5.0}
+          port: 80
+          method: GET
+          uri: "/?orderby=title%20menu_order&order=ASC"
+        output:
+          no_log_contains: id "9522
+
+  - test_title: fp-order-array-reorder
+    desc: >
+      admin-ajax reorder vector uses order[]= (an array, distinct ARGS key),
+      which 9522330 must not match.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: Mozilla/5.0
+            Content-Type: application/x-www-form-urlencoded
+          port: 80
+          method: POST
+          uri: /wp-admin/admin-ajax.php
+          data: "action=save_order&order%5B%5D=12&order%5B%5D=7&order%5B%5D=33"
+        output:
+          no_log_contains: id "9522
+
+  - test_title: fp-numeric-queryvars
+    desc: >
+      Integer WP-core query-vars (p/page_id/paged) must not trip 9522333.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: Mozilla/5.0}
+          port: 80
+          method: GET
+          uri: "/?p=123&page_id=45&paged=2&m=202605"
+        output:
+          no_log_contains: id "9522
+
+  - test_title: fp-cat-list-negative
+    desc: >
+      cat= accepts comma-separated and negative ID lists; it is intentionally
+      excluded from the integer rules and must not trip them.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: Mozilla/5.0}
+          port: 80
+          method: GET
+          uri: "/?cat=1,2,-3"
+        output:
+          no_log_contains: id "9522
+
+  - test_title: fp-strict-integer-params-legit
+    desc: >
+      With strict_integer_params enabled (CI), integer id/post_id/user_id must
+      still pass 9522334.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: Mozilla/5.0}
+          port: 80
+          method: GET
+          uri: "/?user_id=5&post_id=10&id=42"
+        output:
+          no_log_contains: id "9522

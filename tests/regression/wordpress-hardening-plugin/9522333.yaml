@@ -1,0 +1,33 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522333.yaml
+tests:
+  - test_title: 9522333-1
+    desc: SQLi in WP-core numeric query-var p= must be blocked
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+          port: 80
+          method: GET
+          uri: "/?p=1%20AND%201=1"
+        output:
+          log_contains: id "9522333"
+  - test_title: 9522333-2
+    desc: Reflected XSS in page_id= must be blocked
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+          port: 80
+          method: GET
+          uri: "/?page_id=1%3Cscript%3Ealert(1)%3C/script%3E"
+        output:
+          log_contains: id "9522333"

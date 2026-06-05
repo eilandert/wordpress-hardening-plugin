@@ -1,0 +1,33 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522331.yaml
+tests:
+  - test_title: 9522331-1
+    desc: ORDER BY column injection via orderby= subquery must be blocked
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+          port: 80
+          method: GET
+          uri: "/?orderby=(select%20case%20when(1=1)then%201%20else%200%20end)"
+        output:
+          log_contains: id "9522331"
+  - test_title: 9522331-2
+    desc: orderby= with quote/keyword (UNION) must be blocked
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+          port: 80
+          method: GET
+          uri: "/?orderby=id'%20union%20select%20user_pass"
+        output:
+          log_contains: id "9522331"

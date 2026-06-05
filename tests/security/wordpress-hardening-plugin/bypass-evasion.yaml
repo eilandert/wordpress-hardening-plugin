@@ -134,6 +134,61 @@ tests:
           data: "log=alice&pwd=x&wp-submit=Log+In"
         output:
           log_contains: id "9522510"
+
+  # ── ORDER BY / typed-param injection (9522330-9522334) ───────────────────
+  - test_title: evasion-orderby-keywordless-bool
+    desc: >
+      Blind boolean ORDER BY with no SQL keyword and no quotes (a known
+      libinjection bypass) — the orderby PL2 allowlist (9522332) must still
+      catch the parenthesis.
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: corpus}
+          port: 80
+          method: GET
+          uri: "/?orderby=id-(1)"
+        output:
+          log_contains: id "9522332"
+
+  - test_title: evasion-orderby-mixedcase-keyword
+    desc: Mixed-case SQL keyword in orderby must be lowercased and blocked (9522331).
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: corpus}
+          port: 80
+          method: GET
+          uri: "/?orderby=id%20uNiOn%20SeLeCt%20user_pass"
+        output:
+          log_contains: id "9522331"
+
+  - test_title: evasion-order-direction-padded
+    desc: order= padded with a stacked query must be blocked (9522330).
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: corpus}
+          port: 80
+          method: GET
+          uri: "/?order=desc%2C(select*from(select(sleep(5)))a)"
+        output:
+          log_contains: id "9522330"
+
+  - test_title: evasion-numeric-param-urlencoded
+    desc: >
+      URL-encoded SQLi in numeric query-var p= must be decoded and blocked
+      (9522333).
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers: {Host: localhost, User-Agent: corpus}
+          port: 80
+          method: GET
+          uri: "/?p=1%2575nion"
+        output:
+          log_contains: id "9522333"
+
   - test_title: evasion-geoip-mixedcase-generic
     desc: Mixed-case X-GeoIP-Country fallback must also drive the block.
     stages:

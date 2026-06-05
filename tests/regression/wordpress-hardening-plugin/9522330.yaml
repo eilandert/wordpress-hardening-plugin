@@ -1,0 +1,35 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522330.yaml
+tests:
+  - test_title: 9522330-1
+    desc: ORDER BY direction injection via order= (GET) must be blocked
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+          port: 80
+          method: GET
+          uri: "/?order=asc,(select(0)from(select(sleep(5)))a)"
+        output:
+          log_contains: id "9522330"
+  - test_title: 9522330-2
+    desc: order= with arbitrary value (not asc/desc) must be blocked
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+            Content-Type: application/x-www-form-urlencoded
+          port: 80
+          method: POST
+          uri: "/wp-admin/admin-ajax.php"
+          data: "action=foo&order=1;DROP%20TABLE%20wp_users"
+        output:
+          log_contains: id "9522330"

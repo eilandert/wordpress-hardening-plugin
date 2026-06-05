@@ -1,0 +1,23 @@
+---
+meta:
+  author: Thijs Eilander
+  description: wordpress-hardening-plugin
+  enabled: true
+  name: 9522332.yaml
+tests:
+  - test_title: 9522332-1
+    desc: >
+      PL2 strict orderby allowlist — a value with a parenthesis that slips past
+      the PL1 keyword check (no SQL keyword) must still be blocked at PL2.
+      Requires tx.detection_paranoia_level >= 2 (set in the CI crs-main.conf).
+    stages:
+      - input:
+          dest_addr: 127.0.0.1
+          headers:
+            Host: localhost
+            User-Agent: OWASP CRS
+          port: 80
+          method: GET
+          uri: "/?orderby=id%2B1"
+        output:
+          log_contains: id "9522332"
