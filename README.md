@@ -1,6 +1,8 @@
 # Wordpress-hardening-plugin / modsecurity (CRS4.0+)
 ![Integration tests](https://github.com/eilandert/wordpress-hardening-plugin/actions/workflows/integration.yml/badge.svg) ![Lint](https://github.com/eilandert/wordpress-hardening-plugin/actions/workflows/lint.yml/badge.svg) ![Apache + ModSecurity v2](https://github.com/eilandert/wordpress-hardening-plugin/actions/workflows/apache-modsecurity2.yml/badge.svg) ![nginx + libmodsecurity3](https://github.com/eilandert/wordpress-hardening-plugin/actions/workflows/nginx-libmodsecurity3.yml/badge.svg) ![WAF security corpus](https://github.com/eilandert/wordpress-hardening-plugin/actions/workflows/security-corpus.yml/badge.svg)
 
+![Defense-in-depth: the wordpress-hardening-plugin WAF blocks most XSS and SQL injection attacks at the edge before PHP loads, backed by php-snuffleupagus, a hardened Docker container and disciplined patching](https://deb.myguard.nl/wp-content/uploads/2026/06/wordpress-hardening-plugin-defense-in-depth.webp)
+
 This plugin contains extra rules to enhance the security of wordpress installations with the OWASP Core Rule Set.
 It's encouraged to install the wordpress-exclusions-rules-plugin as well, as we only add extra blocks in this plugin.
 
