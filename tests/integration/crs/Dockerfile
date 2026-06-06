@@ -19,10 +19,8 @@
 # ---------------------------------------------------------------------------
 FROM debian:bookworm-slim
 
-# Production ships modsecurity-crs from deb.myguard.nl. Pin the package
-# version; overridable via --build-arg if the repo moves forward.
-ARG CRS_DEB_VERSION=4.27.0+3.260603-3myguard1~bookworm
-
+# Production ships modsecurity-crs from deb.myguard.nl. Install latest
+# available; no version pin so CI never breaks when the package is updated.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
  && install -d -m 0755 /etc/apt/keyrings \
@@ -32,8 +30,7 @@ RUN apt-get update \
  && echo 'deb [signed-by=/etc/apt/keyrings/deb.myguard.nl.gpg] https://deb.myguard.nl bookworm main' \
       > /etc/apt/sources.list.d/myguard.list \
  && apt-get update \
- && apt-get install -y --no-install-recommends \
-      "modsecurity-crs=${CRS_DEB_VERSION}" \
+ && apt-get install -y --no-install-recommends modsecurity-crs \
  && rm -rf /var/lib/apt/lists/* /tmp/mg.key
 
 # Re-home the package tree into the /opt/crs layout the engine images expect.
