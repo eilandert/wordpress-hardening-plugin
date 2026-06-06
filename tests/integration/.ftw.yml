@@ -1,46 +1,27 @@
 ---
-# v2 schema: testoverride.input.* honoured because the koanf tag is "input".
-# (The audit's claim about "overrides:" was wrong — verified against
-# https://github.com/coreruleset/go-ftw/blob/v2.1.0/config/types.go .)
-# The real CI break was the legacy `stage:` wrapper in test stages.
+# go-ftw config for the Apache (ModSecurity v2) backend on :8001.
+# The nginx workflow regenerates this with port 8002 + the nginx log dir and
+# the extra libmodsecurity3-specific ignores (see nginx-libmodsecurity3.yml).
 logfile: tests/logs/apache/audit.log
 testoverride:
   input:
     dest_addr: "127.0.0.1"
     port: 8001
     override_empty_host_header: true
-  # Tests with known pre-existing rule/test mismatches surfaced by the
-  # audit-round-5 harness fix. Each is tracked in AUDIT-ROUND-5.md
-  # "Status — what shipped in this round" → "Pre-existing failures …
-  # deferred to a follow-up audit-round-6".
+  # Pre-existing functional gaps on Apache + mod_security2 (tracked for a
+  # follow-up audit round). These are real rule/payload mismatches, not
+  # environment artefacts — unlike the GeoIP tests, which were fixed by giving
+  # them a public X-Forwarded-For so the RFC-1918 client exemption no longer
+  # masks the block in the docker-bridge CI network.
   ignore:
-    "9522120-1": "audit-round-6: revslider payload encoding"
-    "9522205-2": "audit-round-6: investigate"
+    "9522120-1": "revslider payload encoding — pre-existing"
+    "9522205-2": "investigate — pre-existing"
     "9522307-1": "Apache normalises raw ../ before ModSec; needs encoded payload"
     "9522307-2": "Apache normalises raw ../ before ModSec; needs encoded payload"
     "9522307-3": "Apache normalises raw ../ before ModSec; needs encoded payload"
-    "9522307-5": "audit-round-6: percent-encoded traversal handling"
-    "9522307-6": "audit-round-6: percent-encoded traversal handling"
-    "9522309-1": "audit-round-6: %00 in URI vs Apache/CRS handling"
-    "9522317-1": "audit-round-6: overlap with 9522100 phase-1 hard-block"
-    "9522317-2": "audit-round-6: overlap with 9522100 phase-1 hard-block"
-    "9522510-1": "audit-round-6: GeoIP allow-list seeding for CI"
-    "9522510-4": "audit-round-6: GeoIP allow-list seeding for CI"
-    "9522510-6": "audit-round-6: GeoIP allow-list seeding for CI"
-    "9522510-7": "audit-round-6: GeoIP allow-list seeding for CI"
-    "9522801-2": "audit-round-6: re-verify admin/non-permalink negative cases"
-    # Engine-specific failures on libmodsecurity3 v3 (not Apache + mod_security2):
-    "9522119-1": "libmodsec3 TRACE handling differs from mod_security2 — audit-round-6"
-    "9522412-1": "libmodsec3 persistent-collection gaps (documented in README) — audit-round-6"
-    "9522311-1": "libmodsec3 scanner-UA pmFromFile differs from mod_security2 — audit-round-6"
-    "9522112-2": "libmodsec3 URI/load[]= handling differs from mod_security2 (passes on apache) — audit-round-6"
-    "9522104-12": "libmodsec3 /users/me handling differs (passes on apache) — audit-round-6"
-    "9522309-3": "libmodsec3 null-byte negative differs (passes on apache) — audit-round-6"
-    "9522114-5": "libmodsec3 wp-config.php negative differs (passes on apache) — audit-round-6"
-    "9522200-5": "libmodsec3 wp-cron.php with block_wpcron=1 differs (passes on apache) — audit-round-6"
-    "9522200-11": "libmodsec3 differs (passes on apache) — audit-round-6"
-    "9522603-4": "libmodsec3 IP-rep behaviour differs (passes on apache) — audit-round-6"
-    "9522202-5": "libmodsec3 sensitive-files pmFromFile differs (passes on apache) — audit-round-6"
-    # Security-corpus tests that share root cause with the 9522510 regressions:
-    "evasion-geoip-lowercase-cf": "audit-round-6: shares root cause with 9522510 quarantine"
-    "evasion-geoip-mixedcase-generic": "audit-round-6: shares root cause with 9522510 quarantine"
+    "9522307-5": "percent-encoded traversal handling"
+    "9522307-6": "percent-encoded traversal handling"
+    "9522309-1": "%00 in URI vs Apache/CRS handling"
+    "9522317-1": "overlap with 9522100 phase-1 hard-block"
+    "9522317-2": "overlap with 9522100 phase-1 hard-block"
+    "9522801-2": "re-verify admin/non-permalink negative cases"

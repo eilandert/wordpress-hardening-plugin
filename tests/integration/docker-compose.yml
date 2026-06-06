@@ -1,49 +1,71 @@
-# Both backends, one shared CRS image.
+# Integration test stack — official OWASP CRS images.
 #
-#   crs    – builds the shared CRS + plugin tree (no long-running service;
-#            apache & nginx COPY --from it via build arg).
-#   apache – Apache httpd + ModSecurity v2  (port 8001)
-#   nginx  – Angie + libmodsecurity3 v3      (port 8002)
+#   backend – tiny nginx origin, returns 200 on every path (go-ftw target).
+#   apache  – owasp/modsecurity-crs:<tag>-apache  (ModSecurity v2),  port 8001
+#   nginx   – owasp/modsecurity-crs:<tag>-nginx   (libmodsecurity3),  port 8002
 #
-# Build context is the repo root so the images can COPY plugins/ and
-# tests/integration/. Run from the repo root:
-#   docker compose -f tests/integration/docker-compose.yml build
-#   docker compose -f tests/integration/docker-compose.yml up -d apache nginx
+# Both WAF images are reverse proxies in front of `backend`. They load a
+# STAGED plugins dir (.plugins-staged/) that holds the real plugin tree
+# (plugins/) PLUS the CI-only extras (ci-plugin/), so the include chain is:
+#   *-config.conf -> *-before.conf -> CRS rules -> *-after.conf
+# — same order production uses, with PL2 + opt-in features turned on by the CI
+# config (see ci-plugin/zzz-ci-config.conf).
 #
-# Audit logs are exposed on the host under tests/logs/<backend>/audit.log
-# for go-ftw (FTW_LOGFILE).
+# The staged dir avoids overlaying individual file mounts into a bind-mounted
+# source dir (docker would create stray empty mountpoint files in plugins/).
+# Build it before `up` (the workflows do this; locally run the same):
+#   rm -rf tests/integration/.plugins-staged
+#   mkdir -p tests/integration/.plugins-staged
+#   cp plugins/* tests/integration/ci-plugin/* tests/integration/.plugins-staged/
+#   docker compose -f tests/integration/docker-compose.yml up -d
+#
+# Audit logs land on the host under tests/logs/<backend>/audit.log for go-ftw.
+#
+# CRS_TAG / CRS_TAG_NGINX select the official image tags (defaults track the
+# latest stable -apache / -nginx floating tags). Pin dated tags in CI.
+
+x-modsec-env: &modsec-env
+  BACKEND: "http://backend:80"
+  PORT: "8080"
+  PARANOIA: "2"
+  MODSEC_RULE_ENGINE: "DetectionOnly"
+  MODSEC_AUDIT_ENGINE: "On"
+  MODSEC_AUDIT_LOG_FORMAT: "Native"
+  MODSEC_AUDIT_LOG_TYPE: "Serial"
+  MODSEC_AUDIT_LOG: "/var/log/modsec/audit.log"
+  MODSEC_AUDIT_LOG_PARTS: "ABIJDEFHZ"
+  MODSEC_REQ_BODY_ACCESS: "On"
+  MODSEC_RESP_BODY_ACCESS: "Off"
+  # Lower thresholds so scoring rules surface in DetectionOnly logs. Harmless
+  # in DetectionOnly mode.
+  ANOMALY_INBOUND: "5"
+  ANOMALY_OUTBOUND: "4"
+
 services:
-  crs:
-    image: wphard-crs:latest
-    build:
-      context: ../..
-      dockerfile: tests/integration/crs/Dockerfile
-    # Not a running service; just produces the shared image.
-    command: ["true"]
+  backend:
+    image: nginx:alpine
+    volumes:
+      - ./backend/nginx.conf:/etc/nginx/nginx.conf:ro
     restart: "no"
 
   apache:
-    image: wphard-apache:latest
-    build:
-      context: ../..
-      dockerfile: tests/integration/apache/Dockerfile
-      args:
-        CRS_IMAGE: wphard-crs:latest
-    depends_on: [crs]
-    ports:
-      - "8001:80"
+    image: owasp/modsecurity-crs:${CRS_TAG:-apache}
+    depends_on: [backend]
+    environment:
+      <<: *modsec-env
     volumes:
+      - ./.plugins-staged:/etc/modsecurity.d/owasp-crs/plugins:ro
       - ../logs/apache:/var/log/modsec
+    ports:
+      - "8001:8080"
 
   nginx:
-    image: wphard-nginx:latest
-    build:
-      context: ../..
-      dockerfile: tests/integration/nginx/Dockerfile
-      args:
-        CRS_IMAGE: wphard-crs:latest
-    depends_on: [crs]
-    ports:
-      - "8002:80"
+    image: owasp/modsecurity-crs:${CRS_TAG_NGINX:-nginx}
+    depends_on: [backend]
+    environment:
+      <<: *modsec-env
     volumes:
+      - ./.plugins-staged:/etc/modsecurity.d/owasp-crs/plugins:ro
       - ../logs/nginx:/var/log/modsec
+    ports:
+      - "8002:8080"

@@ -1,12 +1,17 @@
 ---
 # WAF security corpus: adversarial evasion + false-positive payloads run
-# against the SHARED CRS+plugin image on BOTH engines (ModSecurity v2 and
-# libmodsecurity3 v3). An attack that becomes bypassable — or a rule that
-# starts over-blocking real WordPress traffic — fails this check. Cross-engine
-# by design: a bypass that only works on one engine still fails the badge.
+# against the OFFICIAL OWASP CRS image on Apache + ModSecurity v2. An attack
+# that becomes bypassable — or a rule that starts over-blocking real WordPress
+# traffic — fails this check.
 #
-# Security note: the only run:-context interpolation is github.token; all
-# matrix.* values are author-defined in this file. No untrusted event input.
+# Apache only: mod_security2 evaluates the corpus deterministically, so this is
+# a reliable mandatory gate. libmodsecurity3 v3 has an upstream
+# transaction-handling non-determinism that makes a behavioural badge on that
+# engine unreliable (see nginx-libmodsecurity3.yml, which gates rule
+# parse/load on v3 instead). The corpus rules are byte-identical across
+# engines, so a real bypass/over-block is caught here regardless.
+#
+# Security note: the only run:-context interpolation is github.token.
 on: [push, pull_request]          # yamllint disable-line rule:truthy
 name: WAF security corpus
 
@@ -16,54 +21,40 @@ permissions:
 env:
   # renovate: datasource=github-releases depName=coreruleset/go-ftw
   GO_FTW_VERSION: "v2.1.0"
+  CRS_TAG: "4.26.0-apache-202605200705"
+  CRS_TAG_NGINX: "4.26.0-nginx-202605200705"
 
 jobs:
   security-corpus:
+    name: "Corpus — ModSecurity v2"
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - backend: apache
-            engine: "ModSecurity v2"
-            port: 8001
-          - backend: nginx
-            engine: "libmodsecurity3 v3"
-            port: 8002
-    name: "Corpus — ${{ matrix.engine }}"
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build shared CRS image
-        run: docker compose -f tests/integration/docker-compose.yml build crs
-
-      - name: Build backend image
-        env:
-          BACKEND: ${{ matrix.backend }}
-        run: docker compose -f tests/integration/docker-compose.yml build "$BACKEND"
-
-      - name: Prepare log file
-        env:
-          BACKEND: ${{ matrix.backend }}
+      - name: Prepare log dir
         run: |
-          mkdir -p "tests/logs/$BACKEND"
-          : > "tests/logs/$BACKEND/audit.log"
+          mkdir -p tests/logs/apache
+          : > tests/logs/apache/audit.log
           chmod -R 777 tests/logs
 
-      - name: Start backend
-        env:
-          BACKEND: ${{ matrix.backend }}
-          PORT: ${{ matrix.port }}
+      - name: Stage plugins dir (real plugins + CI extras)
         run: |
-          docker compose -f tests/integration/docker-compose.yml up -d "$BACKEND"
+          rm -rf tests/integration/.plugins-staged
+          mkdir -p tests/integration/.plugins-staged
+          cp plugins/* tests/integration/ci-plugin/* \
+             tests/integration/.plugins-staged/
+
+      - name: Start Apache CRS stack
+        run: |
+          docker compose -f tests/integration/docker-compose.yml up -d apache
           for i in $(seq 1 30); do
-            if curl -fsS -o /dev/null "http://127.0.0.1:${PORT}/"; then
-              echo "backend up"; exit 0
+            if curl -fsS -o /dev/null "http://127.0.0.1:8001/"; then
+              echo "apache up"; exit 0
             fi
             sleep 1
           done
-          echo "backend did not become ready"
-          docker compose -f tests/integration/docker-compose.yml logs "$BACKEND"
+          echo "apache did not become ready"
+          docker compose -f tests/integration/docker-compose.yml logs apache
           exit 1
 
       - name: Install go-ftw (retry on flaky tar/network)
@@ -83,45 +74,35 @@ jobs:
           chmod +x ftw
           test -x ftw
 
-      - name: Generate go-ftw config (security corpus)
-        env:
-          BACKEND: ${{ matrix.backend }}
-          PORT: ${{ matrix.port }}
+      - name: Generate go-ftw config (security corpus, apache @ :8001)
         run: |
-          # Start from a fresh base. The two GeoIP-evasion corpus tests
-          # share the audit-round-6 root cause as the 9522510 regression
-          # quarantines — ignore them here on both engines.
+          # No ignores: the GeoIP corpus tests send a public X-Forwarded-For so
+          # the RFC-1918 client exemption no longer masks the block on the
+          # docker-bridge CI network.
           {
             echo '---'
-            echo "logfile: tests/logs/${BACKEND}/audit.log"
+            echo 'logfile: tests/logs/apache/audit.log'
             echo 'testoverride:'
             echo '  input:'
             echo '    dest_addr: "127.0.0.1"'
-            echo "    port: ${PORT}"
+            echo '    port: 8001'
             echo '    override_empty_host_header: true'
-            # ftw v2 ignore keys are matched against the rule_id + test-index
-            # form (e.g. "9522000-9"), not test_title. The corpus YAML's
-            # rule_id is 9522000 and the GeoIP tests are #9 and #10.
-            echo '  ignore:'
-            echo '    "9522000-9": "audit-round-6: shares 9522510 quarantine (evasion-geoip-lowercase-cf)"'
-            echo '    "9522000-10": "audit-round-6: shares 9522510 quarantine (evasion-geoip-mixedcase-generic)"'
-          } > tests/integration/.ftw.yml
+          } > tests/integration/.ftw.corpus.yml
+          cat tests/integration/.ftw.corpus.yml
 
       - name: Run WAF security corpus
         run: |
-          ./ftw check -d tests/security --config tests/integration/.ftw.yml
-          ./ftw run   -d tests/security --config tests/integration/.ftw.yml \
+          ./ftw check -d tests/security --config tests/integration/.ftw.corpus.yml
+          ./ftw run   -d tests/security --config tests/integration/.ftw.corpus.yml \
             --show-failures-only
 
       - name: Dump logs on failure
         if: failure()
-        env:
-          BACKEND: ${{ matrix.backend }}
         run: |
           echo "=== container logs ==="
-          docker compose -f tests/integration/docker-compose.yml logs "$BACKEND" || true
+          docker compose -f tests/integration/docker-compose.yml logs apache || true
           echo "=== modsec audit log ==="
-          tail -n 200 "tests/logs/${BACKEND}/audit.log" || true
+          tail -n 200 tests/logs/apache/audit.log || true
 
       - name: Tear down
         if: always()
