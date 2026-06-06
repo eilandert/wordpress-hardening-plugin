@@ -21,7 +21,7 @@ FROM debian:bookworm-slim
 
 # Production ships modsecurity-crs from deb.myguard.nl. Pin the package
 # version; overridable via --build-arg if the repo moves forward.
-ARG CRS_DEB_VERSION=4.26.0+4.260519-3myguard0~bookworm
+ARG CRS_DEB_VERSION=4.27.0+3.260603-3myguard1~bookworm
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
