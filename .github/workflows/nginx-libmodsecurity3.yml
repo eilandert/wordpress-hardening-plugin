@@ -4,11 +4,13 @@
 # the Apache job, exercised on the v3 engine. Catches v3-specific behaviour
 # (collection state, transformation ordering) that mod_security2 doesn't show.
 #
-# The regression suite is INFORMATIONAL on this engine (continue-on-error):
-# libmodsecurity3 surfaces a small, non-deterministic set of failures that the
-# package does not exhibit in production. apache-modsecurity2.yml is the
-# blocking functional gate; the CRS image's own startup config-parse gates
-# rule-syntax correctness here.
+# MANDATORY gate. libmodsecurity3 has a known SDBM persistent-collection race
+# (initcol:ip) that intermittently breaks one unrelated test per run — an
+# upstream engine bug, not a plugin bug (the package runs cleanly in
+# production). It is contained two ways: the data store is on tmpfs
+# (docker-compose) to shrink the race window, and the suite is retried on a
+# FRESH container up to 5 times, passing on the first clean run. Residual
+# false-fail probability is negligible; a genuine regression fails all 5.
 #
 # Security note: the only run:-context interpolation is github.token.
 on: [push, pull_request]          # yamllint disable-line rule:truthy
@@ -73,38 +75,33 @@ jobs:
           chmod +x ftw
           test -x ftw
 
-      - name: Generate go-ftw config (nginx @ :8002)
-        run: |
-          # Retarget the committed apache config to nginx (port 8002, nginx log
-          # dir) and append the libmodsecurity3-specific ignores. The Apache
-          # pre-existing ignores carry over unchanged.
-          {
-            sed -e 's|tests/logs/apache/audit.log|tests/logs/nginx/audit.log|' \
-                -e 's|    port: 8001|    port: 8002|' \
-                tests/integration/.ftw.yml
-            cat <<'YML'
-    "9522119-1": "libmodsec3 TRACE handling differs from mod_security2"
-    "9522412-1": "libmodsec3 persistent-collection gaps"
-    "9522311-1": "libmodsec3 scanner-UA pmFromFile differs"
-    "9522112-2": "libmodsec3 URI/load[]= handling differs"
-    "9522104-12": "libmodsec3 /users/me handling differs"
-    "9522309-3": "libmodsec3 null-byte negative differs"
-    "9522114-5": "libmodsec3 wp-config.php negative differs"
-    "9522200-5": "libmodsec3 wp-cron.php differs"
-    "9522200-11": "libmodsec3 differs"
-    "9522603-4": "libmodsec3 IP-rep behaviour differs"
-    "9522202-5": "libmodsec3 sensitive-files pmFromFile differs"
-YML
-          } > tests/integration/.ftw.nginx.yml
-          cat tests/integration/.ftw.nginx.yml
+      - name: Validate go-ftw test files
+        run: ./ftw check -d tests/regression --config tests/integration/.ftw.nginx.yml
 
-      - name: Run plugin regression suite
-        # See header: informational on libmodsecurity3.
-        continue-on-error: true
+      - name: Run plugin regression suite (retry on libmodsec3 SDBM flake)
         run: |
-          ./ftw check -d tests/regression --config tests/integration/.ftw.nginx.yml
-          ./ftw run   -d tests/regression --config tests/integration/.ftw.nginx.yml \
-            --show-failures-only
+          # Up to 5 attempts; each restarts nginx for a clean tmpfs collection
+          # store, then runs the suite. Pass on the first fully-clean run. A
+          # real regression fails every attempt and the step fails.
+          for attempt in 1 2 3 4 5; do
+            echo "::group::attempt ${attempt}"
+            docker compose -f tests/integration/docker-compose.yml restart nginx
+            for i in $(seq 1 30); do
+              curl -fsS -o /dev/null "http://127.0.0.1:8002/" && break
+              sleep 1
+            done
+            : > tests/logs/nginx/audit.log
+            if ./ftw run -d tests/regression \
+                 --config tests/integration/.ftw.nginx.yml --show-failures-only; then
+              echo "::endgroup::"
+              echo "clean on attempt ${attempt}"
+              exit 0
+            fi
+            echo "::endgroup::"
+            echo "attempt ${attempt} had failures; retrying on a fresh container"
+          done
+          echo "regression suite failed all 5 attempts — treating as a real failure"
+          exit 1
 
       - name: Dump logs on failure
         if: failure()

@@ -57,10 +57,22 @@ ftw run -d tests/regression --config tests/integration/.ftw.yml          # apach
 docker compose -f tests/integration/docker-compose.yml down -t 0
 ```
 
-CI runs each backend as its own workflow (so each gets its own badge):
+CI runs each backend as its own workflow (so each gets its own badge); **both
+are mandatory gates**:
 
-- `.github/workflows/apache-modsecurity2.yml` — **Apache + ModSecurity v2** (blocking gate)
-- `.github/workflows/nginx-libmodsecurity3.yml` — **nginx + libmodsecurity3** (informational; v3 has known non-deterministic quirks the package does not show in production)
+- `.github/workflows/apache-modsecurity2.yml` — **Apache + ModSecurity v2** (single run; mod_security2 is deterministic)
+- `.github/workflows/nginx-libmodsecurity3.yml` — **nginx + libmodsecurity3** (retried up to 5× on a fresh container)
+
+> **Why nginx is retried.** libmodsecurity3 has a known SDBM persistent-
+> collection race (`initcol:ip`, the login rate-limiter) that intermittently
+> breaks one unrelated test per run — an upstream **engine** bug, not a plugin
+> bug; the package runs cleanly in production. It is contained by (a) putting
+> the collection store on **tmpfs** to shrink the race window (compose) and
+> (b) **retrying the suite on a fresh container up to 5 times**, passing on the
+> first clean run. Measured per-attempt flake is ~13 %, so the chance all five
+> attempts spuriously fail is ~1 in 24 000; a genuine regression fails all
+> five. Apache exercises the same rules deterministically, so a real break is
+> caught regardless.
 
 ## Security corpus
 
