@@ -18,6 +18,10 @@ tests:
             User-Agent: OWASP CRS
             Content-Type: application/x-www-form-urlencoded
             CF-IPCountry: CN
+            # Public client IP: the block exempts private RFC-1918 clients, and
+            # the CI container's REMOTE_ADDR is a docker bridge address. A real
+            # public XFF is the "client behind a proxy" case the rule targets.
+            X-Forwarded-For: 203.0.113.7
           port: 80
           method: POST
           uri: /wp-login.php
@@ -75,6 +79,7 @@ tests:
             User-Agent: OWASP CRS
             Content-Type: application/x-www-form-urlencoded
             X-GeoIP-Country: RU
+            X-Forwarded-For: 203.0.113.7
           port: 80
           method: POST
           uri: /wp-login.php
@@ -121,6 +126,7 @@ tests:
             User-Agent: OWASP CRS
             Content-Type: application/x-www-form-urlencoded
             CF-IPCountry: cn
+            X-Forwarded-For: 203.0.113.7
           port: 80
           method: POST
           uri: /wp-login.php
@@ -140,6 +146,7 @@ tests:
             User-Agent: OWASP CRS
             Content-Type: application/x-www-form-urlencoded
             X-GeoIP-Country: ru
+            X-Forwarded-For: 203.0.113.7
           port: 80
           method: POST
           uri: /wp-login.php

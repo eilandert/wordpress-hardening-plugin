@@ -1,8 +1,12 @@
 ---
-# Apache httpd + ModSecurity v2 (libapache2-mod-security2).
-# Builds the SHARED CRS+plugin image (tests/integration/crs) and runs the
-# go-ftw regression suite against it. `apache2ctl -t` runs at image build
-# time: an invalid rule (e.g. the AH00526 `t:uppercase` bug) fails the build.
+# Apache httpd + ModSecurity v2, via the OFFICIAL OWASP CRS image
+# (owasp/modsecurity-crs:<tag>-apache). The image is a reverse proxy in front
+# of a tiny stub origin; this repo's plugin tree + a CI-only config plugin are
+# mounted into the CRS plugins dir. go-ftw drives the regression suite and
+# asserts on the ModSecurity audit log.
+#
+# Using the upstream image means CRS version drift never breaks the build the
+# way a pinned deb package did — the tag is bumped here, in one place.
 #
 # Security note: the only ${{ }} in a run: context is github.token; no
 # untrusted event input is interpolated anywhere.
@@ -15,6 +19,9 @@ permissions:
 env:
   # renovate: datasource=github-releases depName=coreruleset/go-ftw
   GO_FTW_VERSION: "v2.1.0"
+  # Official OWASP CRS image tags. Bump together; -dev tags are not used.
+  CRS_TAG: "4.26.0-apache-202605200705"
+  CRS_TAG_NGINX: "4.26.0-nginx-202605200705"
 
 jobs:
   apache-modsecurity2:
@@ -23,19 +30,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build shared CRS image
-        run: docker compose -f tests/integration/docker-compose.yml build crs
-
-      - name: Build Apache image (apache2ctl -t — AH00526 gate)
-        run: docker compose -f tests/integration/docker-compose.yml build apache
-
-      - name: Prepare log file
+      - name: Prepare log dir
         run: |
           mkdir -p tests/logs/apache
           : > tests/logs/apache/audit.log
           chmod -R 777 tests/logs
 
-      - name: Start Apache
+      - name: Stage plugins dir (real plugins + CI extras)
+        run: |
+          rm -rf tests/integration/.plugins-staged
+          mkdir -p tests/integration/.plugins-staged
+          cp plugins/* tests/integration/ci-plugin/* \
+             tests/integration/.plugins-staged/
+
+      - name: Start Apache CRS stack
         run: |
           docker compose -f tests/integration/docker-compose.yml up -d apache
           for i in $(seq 1 30); do
@@ -52,9 +60,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Download to disk first (avoids pipe truncation on transient
-          # network errors that produced "tar: Error is not recoverable"
-          # in earlier runs). Retry up to 3x.
           for attempt in 1 2 3; do
             rm -f ftw.tgz ftw
             if gh release download -R coreruleset/go-ftw \
@@ -69,12 +74,7 @@ jobs:
           test -x ftw
 
       - name: Use committed go-ftw config (apache @ :8001)
-        run: |
-          # The committed tests/integration/.ftw.yml targets the apache
-          # backend on :8001 with the v2-correct `testoverride.input:`
-          # schema and an `ignore:` list for pre-existing test failures
-          # tracked in AUDIT-ROUND-5.md. No regeneration needed.
-          cat tests/integration/.ftw.yml
+        run: cat tests/integration/.ftw.yml
 
       - name: Run plugin regression suite
         run: |

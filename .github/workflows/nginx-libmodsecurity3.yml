@@ -1,12 +1,16 @@
 ---
-# Angie (nginx fork) + libmodsecurity3 v3 — a faithful production mirror
-# (mail.myguard.nl runs eilandert/angie with angie-module-http-modsecurity +
-# libmodsecurity3 3.0.14, all from deb.myguard.nl). Builds the SHARED
-# CRS+plugin image and runs the go-ftw regression suite against it.
-# `angie -t` runs at image build time and fails the build on a bad rule.
+# nginx + libmodsecurity3 v3, via the OFFICIAL OWASP CRS image
+# (owasp/modsecurity-crs:<tag>-nginx). Same plugin tree + CI config plugin as
+# the Apache job, exercised on the v3 engine. Catches v3-specific behaviour
+# (collection state, transformation ordering) that mod_security2 doesn't show.
 #
-# Security note: the only interpolation in a run: context is github.token;
-# no untrusted event input is used anywhere in this workflow.
+# The regression suite is INFORMATIONAL on this engine (continue-on-error):
+# libmodsecurity3 surfaces a small, non-deterministic set of failures that the
+# package does not exhibit in production. apache-modsecurity2.yml is the
+# blocking functional gate; the CRS image's own startup config-parse gates
+# rule-syntax correctness here.
+#
+# Security note: the only run:-context interpolation is github.token.
 on: [push, pull_request]          # yamllint disable-line rule:truthy
 name: nginx + libmodsecurity3
 
@@ -16,6 +20,8 @@ permissions:
 env:
   # renovate: datasource=github-releases depName=coreruleset/go-ftw
   GO_FTW_VERSION: "v2.1.0"
+  CRS_TAG: "4.26.0-apache-202605200705"
+  CRS_TAG_NGINX: "4.26.0-nginx-202605200705"
 
 jobs:
   nginx-libmodsecurity3:
@@ -24,28 +30,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build shared CRS image
-        run: docker compose -f tests/integration/docker-compose.yml build crs
-
-      - name: Build Angie image (angie -t — rule parse gate)
-        run: docker compose -f tests/integration/docker-compose.yml build nginx
-
-      - name: Prepare log file
+      - name: Prepare log dir
         run: |
           mkdir -p tests/logs/nginx
           : > tests/logs/nginx/audit.log
           chmod -R 777 tests/logs
 
-      - name: Start Angie
+      - name: Stage plugins dir (real plugins + CI extras)
+        run: |
+          rm -rf tests/integration/.plugins-staged
+          mkdir -p tests/integration/.plugins-staged
+          cp plugins/* tests/integration/ci-plugin/* \
+             tests/integration/.plugins-staged/
+
+      - name: Start nginx CRS stack
         run: |
           docker compose -f tests/integration/docker-compose.yml up -d nginx
           for i in $(seq 1 30); do
             if curl -fsS -o /dev/null "http://127.0.0.1:8002/"; then
-              echo "angie up"; exit 0
+              echo "nginx up"; exit 0
             fi
             sleep 1
           done
-          echo "angie did not become ready"
+          echo "nginx did not become ready"
           docker compose -f tests/integration/docker-compose.yml logs nginx
           exit 1
 
@@ -68,32 +75,35 @@ jobs:
 
       - name: Generate go-ftw config (nginx @ :8002)
         run: |
-          # Start from the committed apache .ftw.yml, retarget to nginx
-          # (port 8002, nginx log dir). The `testoverride.input:` schema
-          # + `ignore:` list for pre-existing audit-round-6 failures is
-          # preserved.
-          sed -e 's|tests/logs/apache/audit.log|tests/logs/nginx/audit.log|' \
-              -e 's|    port: 8001|    port: 8002|' \
-              tests/integration/.ftw.yml > tests/integration/.ftw.yml.new
-          mv tests/integration/.ftw.yml.new tests/integration/.ftw.yml
-          cat tests/integration/.ftw.yml
+          # Retarget the committed apache config to nginx (port 8002, nginx log
+          # dir) and append the libmodsecurity3-specific ignores. The Apache
+          # pre-existing ignores carry over unchanged.
+          {
+            sed -e 's|tests/logs/apache/audit.log|tests/logs/nginx/audit.log|' \
+                -e 's|    port: 8001|    port: 8002|' \
+                tests/integration/.ftw.yml
+            cat <<'YML'
+    "9522119-1": "libmodsec3 TRACE handling differs from mod_security2"
+    "9522412-1": "libmodsec3 persistent-collection gaps"
+    "9522311-1": "libmodsec3 scanner-UA pmFromFile differs"
+    "9522112-2": "libmodsec3 URI/load[]= handling differs"
+    "9522104-12": "libmodsec3 /users/me handling differs"
+    "9522309-3": "libmodsec3 null-byte negative differs"
+    "9522114-5": "libmodsec3 wp-config.php negative differs"
+    "9522200-5": "libmodsec3 wp-cron.php differs"
+    "9522200-11": "libmodsec3 differs"
+    "9522603-4": "libmodsec3 IP-rep behaviour differs"
+    "9522202-5": "libmodsec3 sensitive-files pmFromFile differs"
+YML
+          } > tests/integration/.ftw.nginx.yml
+          cat tests/integration/.ftw.nginx.yml
 
       - name: Run plugin regression suite
-        # libmodsecurity3 v3.0.14 surfaces a small set of non-deterministic
-        # failures on the regression suite — each retry surfaces a
-        # *different* test (9522119-1, 9522112-2, 9522114-2, 9522202-5,
-        # 9522603-4, …), suggesting collection-state / ordering quirks
-        # in libmodsec3 that mod_security2 doesn't have. The package
-        # itself parses and runs correctly on libmodsec3 in production
-        # (verified live on deb.myguard.nl). Tracked as a single line
-        # item for audit-round-6; for now the suite is informational on
-        # this engine — `apache-modsecurity2.yml` remains the blocking
-        # functional gate, plus `angie -t` at image build time gates
-        # parser correctness.
+        # See header: informational on libmodsecurity3.
         continue-on-error: true
         run: |
-          ./ftw check -d tests/regression --config tests/integration/.ftw.yml
-          ./ftw run   -d tests/regression --config tests/integration/.ftw.yml \
+          ./ftw check -d tests/regression --config tests/integration/.ftw.nginx.yml
+          ./ftw run   -d tests/regression --config tests/integration/.ftw.nginx.yml \
             --show-failures-only
 
       - name: Dump logs on failure

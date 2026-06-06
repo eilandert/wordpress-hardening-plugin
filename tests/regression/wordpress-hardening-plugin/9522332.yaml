@@ -9,7 +9,10 @@ tests:
     desc: >
       PL2 strict orderby allowlist — a value with a parenthesis that slips past
       the PL1 keyword check (no SQL keyword) must still be blocked at PL2.
-      Requires tx.detection_paranoia_level >= 2 (set in the CI crs-main.conf).
+      Requires tx.detection_paranoia_level >= 2 (set by the CI plugin config).
+      NB: the payload must use a character OUTSIDE [A-Za-z0-9_. ,]. A literal
+      '+' (%2B) form-decodes to a SPACE, which is allowed (multi-column ORDER
+      BY), so a parenthesis is used here instead.
     stages:
       - input:
           dest_addr: 127.0.0.1
@@ -18,6 +21,6 @@ tests:
             User-Agent: OWASP CRS
           port: 80
           method: GET
-          uri: "/?orderby=id%2B1"
+          uri: "/?orderby=id%281%29"
         output:
           log_contains: id "9522332"

@@ -4,3 +4,11 @@ tests/logs/
 
 # go-ftw binary fetched by CI / local runs
 /ftw
+ftw.tgz
+
+# generated per-engine go-ftw configs (committed base is .ftw.yml)
+tests/integration/.ftw.nginx.yml
+tests/integration/.ftw.corpus.yml
+
+# staged plugins dir (plugins/ + ci-plugin/ merged at test time)
+tests/integration/.plugins-staged/
