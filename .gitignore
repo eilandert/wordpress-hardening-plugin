@@ -6,7 +6,7 @@ tests/logs/
 /ftw
 ftw.tgz
 
-# generated per-run go-ftw corpus config (committed bases: .ftw.yml, .ftw.nginx.yml)
+# generated per-run go-ftw corpus config (committed base: .ftw.yml)
 tests/integration/.ftw.corpus.yml
 
 # staged plugins dir (plugins/ + ci-plugin/ merged at test time)

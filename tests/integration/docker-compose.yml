@@ -67,14 +67,5 @@ services:
     volumes:
       - ./.plugins-staged:/etc/modsecurity.d/owasp-crs/plugins:ro
       - ../logs/nginx:/var/log/modsec
-    # Persistent-collection (initcol:ip / SDBM) store on tmpfs. libmodsecurity3
-    # has a known SDBM read-modify-write race that intermittently breaks an
-    # unrelated later test; a RAM-backed store cuts the timing window. The
-    # nginx workflow additionally retries the suite on a fresh container, which
-    # together make this engine a deterministic mandatory gate despite the
-    # upstream engine non-determinism.
-    tmpfs:
-      - /tmp/modsecurity/data
-      - /tmp/modsecurity/tmp
     ports:
       - "8002:8080"
