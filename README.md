@@ -289,3 +289,7 @@ If you find a false positive that this plugin does not cover then please open a 
 2. ModSecurity/Coraza Version
 3. modsec audit logs
 4. what caused the false positive
+
+## See also
+
+- WAF engine deep-dive: [Coraza WAF on NGINX — the Go-powered ModSecurity replacement](https://deb.myguard.nl/2026/06/coraza-waf-nginx-modsecurity-replacement/). What Coraza and libcoraza are, how the CRS (and this plugin) run on the Go engine, and when to pick it over ModSecurity.
